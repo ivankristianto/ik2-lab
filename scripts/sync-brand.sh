@@ -34,6 +34,14 @@ pairs=(
 	"docs/lab-tool-guidelines.md:docs/tool-guidelines.md"
 )
 
+# Refuse before writing anything: an older ref without every file would leave the copies half updated.
+for pair in "${pairs[@]}"; do
+	if ! git -C "$ik2" cat-file -e "$commit:${pair%%:*}" 2>/dev/null; then
+		echo "sync-brand: ik2 $ref has no ${pair%%:*}. Nothing was changed; pick a ref that includes the lab." >&2
+		exit 1
+	fi
+done
+
 stale=0
 for pair in "${pairs[@]}"; do
 	from="${pair%%:*}"
