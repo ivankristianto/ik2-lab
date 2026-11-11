@@ -1,0 +1,378 @@
+/* Lab kit: shared styles for tools framed on ivankristianto.com. Every value comes from tokens.css; see README.md. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scrollbar-color: var(--wp--preset--color--rule) transparent;
+  scrollbar-width: thin;
+}
+
+body {
+  margin: 0;
+  padding: var(--wp--preset--spacing--6) var(--wp--preset--spacing--5);
+  color: var(--wp--preset--color--ink);
+  background: var(--wp--preset--color--paper);
+  font-family: var(--wp--preset--font-family--sans);
+  font-size: var(--wp--preset--font-size--small);
+  line-height: var(--wp--custom--line-height--comfortable);
+  caret-color: var(--wp--preset--color--signal);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Framed on an entry: the frame is a Surface sheet, so the tool sits on Surface and drops its own page chrome. */
+[data-embedded] body {
+  padding: var(--wp--preset--spacing--5);
+  background: var(--wp--preset--color--surface);
+}
+
+@media (max-width: 40em) {
+
+  /* 16px is the smallest control text iOS leaves alone; anything smaller zooms the page on focus. */
+  .lab-input,
+  .lab-textarea,
+  .lab-select,
+  .lab-textarea--code,
+  .lab-input--code {
+    font-size: 1rem;
+  }
+}
+
+[data-embedded] .lab-standalone {
+  display: none;
+}
+
+::selection {
+  color: var(--wp--preset--color--signal-deep);
+  background: var(--wp--preset--color--signal-soft);
+}
+
+:focus-visible {
+  outline: var(--wp--custom--focus--width) solid var(--wp--preset--color--signal);
+  outline-offset: var(--wp--custom--focus--offset);
+}
+
+a {
+  color: var(--wp--preset--color--signal);
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.18em;
+  transition: color var(--wp--custom--transition--base);
+}
+
+a:hover {
+  color: var(--wp--preset--color--signal-deep);
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: var(--wp--custom--font-weight--bold);
+  line-height: var(--wp--custom--line-height--snug);
+  letter-spacing: var(--wp--custom--letter-spacing--tight, -0.02em);
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: var(--wp--preset--font-size--large);
+}
+
+h2 {
+  font-size: var(--wp--preset--font-size--medium);
+}
+
+p {
+  margin: 0;
+  max-width: var(--wp--custom--width--measure);
+}
+
+code,
+kbd,
+samp {
+  font-family: var(--wp--preset--font-family--mono);
+  font-size: 0.9375em;
+}
+
+/* Standalone header: shown only when the tool is opened on its own. */
+.lab-standalone {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wp--preset--spacing--2) var(--wp--preset--spacing--5);
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--wp--preset--spacing--6);
+  padding-bottom: var(--wp--preset--spacing--5);
+  border-bottom: 1px solid var(--wp--preset--color--line);
+}
+
+.lab-standalone__back {
+  font-family: var(--wp--preset--font-family--mono);
+  font-size: var(--wp--preset--font-size--x-small);
+}
+
+/* Layout: a stack of groups, and a two-pane split that folds at 45em of frame width. */
+.lab-stack {
+  display: grid;
+  gap: var(--wp--preset--spacing--5);
+}
+
+.lab-split {
+  display: grid;
+  gap: var(--wp--preset--spacing--6);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 45em) {
+
+  .lab-split {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  }
+}
+
+/* Fields */
+.lab-field {
+  display: grid;
+  gap: var(--wp--preset--spacing--2);
+}
+
+.lab-label {
+  color: var(--wp--preset--color--graphite);
+  font-family: var(--wp--preset--font-family--mono);
+  font-size: var(--wp--preset--font-size--x-small);
+  line-height: var(--wp--custom--line-height--normal);
+}
+
+.lab-hint {
+  color: var(--wp--preset--color--dust);
+  font-size: var(--wp--preset--font-size--x-small);
+}
+
+.lab-input,
+.lab-textarea,
+.lab-select {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: var(--wp--preset--spacing--2) var(--wp--preset--spacing--3);
+  color: var(--wp--preset--color--ink);
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--preset--border-radius--md);
+  font: inherit;
+  transition: border-color var(--wp--custom--transition--base);
+}
+
+.lab-input:hover,
+.lab-textarea:hover,
+.lab-select:hover {
+  border-color: var(--wp--preset--color--rule);
+}
+
+.lab-textarea {
+  display: block;
+  min-height: 12rem;
+  resize: vertical;
+}
+
+/* Pasted code and data sit on Code Paper, like a code block on the site. */
+.lab-textarea--code,
+.lab-input--code {
+  background: var(--wp--preset--color--code-paper);
+  font-family: var(--wp--preset--font-family--mono);
+  font-size: var(--wp--preset--font-size--x-small);
+  line-height: var(--wp--custom--line-height--comfortable);
+}
+
+.lab-input::placeholder,
+.lab-textarea::placeholder {
+  color: var(--wp--preset--color--dust);
+  opacity: 1;
+}
+
+.lab-input[aria-invalid="true"],
+.lab-textarea[aria-invalid="true"] {
+  border-color: var(--wp--preset--color--red);
+}
+
+/* Buttons: never pills. Primary is Ink, secondary is a bordered Surface. */
+.lab-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wp--preset--spacing--3);
+  align-items: center;
+}
+
+.lab-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: var(--wp--preset--spacing--2) var(--wp--preset--spacing--4);
+  color: var(--wp--preset--color--paper);
+  background: var(--wp--preset--color--ink);
+  border: 1px solid var(--wp--preset--color--ink);
+  border-radius: var(--wp--preset--border-radius--md);
+  font: inherit;
+  font-size: var(--wp--preset--font-size--x-small);
+  font-weight: var(--wp--custom--font-weight--semibold);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background var(--wp--custom--transition--base),
+    border-color var(--wp--custom--transition--base),
+    color var(--wp--custom--transition--base);
+}
+
+.lab-button:hover {
+  color: var(--wp--preset--color--paper);
+  background: var(--wp--preset--color--signal-deep);
+  border-color: var(--wp--preset--color--signal-deep);
+}
+
+.lab-button--secondary {
+  color: var(--wp--preset--color--graphite);
+  background: var(--wp--preset--color--surface);
+  border-color: var(--wp--preset--color--line);
+}
+
+.lab-button--secondary:hover {
+  color: var(--wp--preset--color--ink);
+  background: var(--wp--preset--color--surface);
+  border-color: var(--wp--preset--color--rule);
+}
+
+.lab-button:disabled {
+  color: var(--wp--preset--color--dust);
+  background: var(--wp--preset--color--soft-paper);
+  border-color: var(--wp--preset--color--line);
+  cursor: not-allowed;
+}
+
+/* Output */
+.lab-output {
+  display: grid;
+  gap: var(--wp--preset--spacing--4);
+  align-content: start;
+  min-width: 0;
+}
+
+.lab-output__head {
+  display: flex;
+  gap: var(--wp--preset--spacing--4);
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: var(--wp--preset--spacing--2);
+  border-bottom: 1px solid var(--wp--preset--color--ink);
+  font-family: var(--wp--preset--font-family--mono);
+  font-size: var(--wp--preset--font-size--x-small);
+}
+
+.lab-output__note {
+  color: var(--wp--preset--color--dust);
+}
+
+.lab-empty {
+  color: var(--wp--preset--color--graphite);
+}
+
+.lab-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--wp--preset--font-family--mono);
+  font-size: var(--wp--preset--font-size--x-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.lab-table th,
+.lab-table td {
+  padding: var(--wp--preset--spacing--2) var(--wp--preset--spacing--4) var(--wp--preset--spacing--2) 0;
+  border-bottom: 1px solid var(--wp--preset--color--line);
+  text-align: left;
+  vertical-align: baseline;
+  overflow-wrap: break-word;
+}
+
+.lab-table th {
+  color: var(--wp--preset--color--dust);
+  font-weight: var(--wp--custom--font-weight--regular);
+  white-space: nowrap;
+}
+
+.lab-table th:last-child,
+.lab-table td:last-child {
+  padding-right: 0;
+}
+
+.lab-table .num {
+  text-align: right;
+}
+
+/* Status: a dot and a lowercase mono word. Status colours mean status and nothing else. */
+.lab-status {
+  display: inline-flex;
+  gap: var(--wp--preset--spacing--2);
+  align-items: center;
+  font-family: var(--wp--preset--font-family--mono);
+  font-size: var(--wp--preset--font-size--x-small);
+  color: var(--wp--preset--color--dust);
+}
+
+.lab-status::before {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--wp--preset--border-radius--round);
+  background: currentcolor;
+}
+
+.lab-status--ok {
+  color: var(--wp--preset--color--build-green);
+}
+
+.lab-status--warn {
+  color: var(--wp--preset--color--amber);
+}
+
+.lab-status--error {
+  color: var(--wp--preset--color--red);
+}
+
+.lab-error {
+  padding: var(--wp--preset--spacing--3) var(--wp--preset--spacing--4);
+  border: 1px solid var(--wp--preset--color--red);
+  border-radius: var(--wp--preset--border-radius--md);
+  color: var(--wp--preset--color--ink);
+}
+
+/* A specimen line: sample text set large, each run marked by the file that drew it. */
+.lab-specimen {
+  margin: 0;
+  padding: var(--wp--preset--spacing--4);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--preset--border-radius--md);
+  font-size: var(--wp--preset--font-size--large);
+  line-height: var(--wp--custom--line-height--normal);
+  overflow-wrap: anywhere;
+}
+
+.lab-specimen mark {
+  color: inherit;
+  background: none;
+  border-bottom: 2px solid var(--wp--preset--color--rule);
+}
+
+.lab-specimen mark[data-hit="none"] {
+  color: var(--wp--preset--color--dust);
+  border-bottom-style: dotted;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  * {
+    transition-duration: 0s;
+  }
+}

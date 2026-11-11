@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Font split inspector</title>
+<script>if (window.top !== window) document.documentElement.setAttribute('data-embedded', '');</script>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/lab.css">
+</head>
+<body>
+<header class="lab-standalone">
+  <h1>Font split inspector</h1>
+  <a class="lab-standalone__back" href="http://localhost:8080/lab/font-split-inspector/">ivankristianto.com/lab/font-split-inspector</a>
+</header>
+
+<main class="lab-split">
+  <form class="lab-stack" id="form">
+    <div class="lab-field">
+      <label class="lab-label" for="css">@font-face rules</label>
+      <textarea class="lab-textarea lab-textarea--code" id="css" spellcheck="false">@font-face {
+  font-family: "Inter";
+  src: url("inter-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+2000-206F;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("inter-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-024F, U+1E00-1EFF;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("inter-vietnamese.woff2") format("woff2");
+  unicode-range: U+0102-0103, U+1EA0-1EF9, U+20AB;
+}</textarea>
+    </div>
+    <div class="lab-field">
+      <label class="lab-label" for="sample">sample text</label>
+      <input class="lab-input" id="sample" value="Café Łódź, Việt Nam 北京">
+      <span class="lab-hint">Nothing leaves your browser.</span>
+    </div>
+    <div class="lab-actions">
+      <button class="lab-button" type="submit">Inspect</button>
+      <button class="lab-button lab-button--secondary" type="reset">Reset</button>
+    </div>
+  </form>
+
+  <section class="lab-output" aria-live="polite">
+    <div class="lab-output__head"><span>result</span><span class="lab-output__note" id="note"></span></div>
+    <p class="lab-specimen" id="specimen"></p>
+    <table class="lab-table">
+      <thead><tr><th>file</th><th>characters</th><th class="num">count</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+function parseFaces(css) {
+  return [...css.matchAll(/@font-face\s*{([^}]*)}/g)].map((m) => {
+    const src = /url\(\s*["']?([^"')]+)/.exec(m[1]);
+    const range = /unicode-range\s*:\s*([^;]+)/.exec(m[1]);
+    const ranges = (range ? range[1] : 'U+0-10FFFF').split(',').map((r) => {
+      const [a, b] = r.trim().replace(/^U\+/i, '').split('-');
+      return [parseInt(a, 16), parseInt(b || a, 16)];
+    });
+    return { file: src ? src[1] : '(no src)', ranges };
+  });
+}
+
+function inspect() {
+  const faces = parseFaces($('css').value);
+  const hits = new Map();
+  const specimen = $('specimen');
+  specimen.textContent = '';
+  for (const ch of $('sample').value) {
+    const cp = ch.codePointAt(0);
+    const face = faces.findLast((f) => f.ranges.some(([a, b]) => cp >= a && cp <= b));
+    const file = face ? face.file : 'fallback font';
+    if (ch.trim()) hits.set(file, [...(hits.get(file) || []), ch]);
+    const mark = document.createElement('mark');
+    mark.textContent = ch;
+    mark.title = file;
+    if (!face) mark.dataset.hit = 'none';
+    specimen.append(mark);
+  }
+  $('rows').textContent = '';
+  for (const [file, chars] of hits) {
+    const tr = document.createElement('tr');
+    for (const [text, cls] of [[file], [[...new Set(chars)].join(' ')], [chars.length, 'num']]) {
+      const td = document.createElement('td');
+      td.textContent = text;
+      if (cls) td.className = cls;
+      tr.append(td);
+    }
+    $('rows').append(tr);
+  }
+  $('note').textContent = faces.length + ' faces, ' + hits.size + ' used';
+}
+
+$('form').addEventListener('submit', (e) => { e.preventDefault(); inspect(); });
+$('form').addEventListener('reset', () => setTimeout(inspect));
+inspect();
+
+if (window.top !== window) {
+  const report = () => parent.postMessage({ type: 'ik2-lab:resize', height: Math.ceil(document.body.getBoundingClientRect().height) }, '*');
+  new ResizeObserver(report).observe(document.body);
+}
+</script>
+</body>
+</html>
