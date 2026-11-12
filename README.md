@@ -56,7 +56,8 @@ scripts/sync-brand.sh --check    # fail if a copy has drifted
 Start from `font-split/` and rewrite its `README.md` for the new tool. Then add a row to the table above. Every tool has to:
 
 - set `data-embedded` on `<html>` before first paint when it is framed;
-- post `{ type: 'ik2-lab:resize', height }` to its parent whenever `document.body` changes height;
+- post `{ type: 'ik2-lab:resize', height }` to the site's origin, never `'*'`, whenever `document.body` changes height;
+- link back to the main site with production URLs marked `data-site-link`, so a dev checkout points at `localhost:8080`;
 - open every link in a new tab;
 - show a useful result on load;
 - say whether the input stays in the browser.

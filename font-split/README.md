@@ -21,7 +21,6 @@ Then open `http://localhost:8787/font-split/`.
 
 Nowhere. The rules and text are parsed in the browser and nothing is sent to a server.
 
-## Only works locally for now
+## Local and production
 
-- The standalone header links back to `http://localhost:8080/lab/font-split-inspector/`, the ik2 dev stack. It needs to point at the production entry once the tool is hosted.
-- The resize message is posted to `'*'`. A deployed tool should name the site's origin.
+The back link and the resize message both go to the main site. Production is `https://www.ivankristianto.com`. When the tool is served from `localhost`, it uses the ik2 dev stack at `http://localhost:8080`. When the tool is framed, the parent's origin comes from the referrer, so a tool on `localhost:8787` framed by the dev stack resizes correctly.

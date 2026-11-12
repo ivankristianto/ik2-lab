@@ -62,7 +62,10 @@ Rules that constrain every change:
 ## What every tool must do
 
 1. Set `data-embedded` on `<html>` before first paint when `window.top !== window`. Framed, it sits on Surface with no header. On its own, it sits on Paper with a `.lab-standalone` header linking back to its entry.
-2. Post `{ type: 'ik2-lab:resize', height }` to the parent whenever `document.body` changes height (a `ResizeObserver` on `document.body`). Never scroll inside the frame.
+2. Post `{ type: 'ik2-lab:resize', height }` to the parent whenever `document.body` changes height (a `ResizeObserver` on `document.body`). Never scroll inside the frame. Post to the site origin, never `'*'`.
+   - Work out the site origin from an allowlist, `https://www.ivankristianto.com` and the dev stack's `http://localhost:8080`. Pick the one that matches `document.referrer`. If none matches, use the dev origin when the tool is served from `localhost` and the production origin otherwise. Don't use `location.ancestorOrigins`; only Chromium has it.
+   - Write every link to the main site with its production URL and a `data-site-link` attribute. The same script swaps in the site origin, so a dev checkout links back to `localhost:8080`.
+   - Copy that script from `font-split/index.html`.
 3. Open every link in a new tab (`target="_blank" rel="noopener"`). The sandbox blocks top navigation.
 4. Show a useful result on load.
 5. Say under the input whether it stays in the browser.
@@ -92,4 +95,4 @@ First person, working engineer, plain. Labels are lowercase (`sample text`, `res
 
 ## Not decided yet
 
-Hosting, response headers (`frame-ancestors https://www.ivankristianto.com`, `X-Robots-Tag: noindex, indexifembedded`), the Worker for server-side fetches, and releases. Don't add any of them without asking. The demo posts its resize message to `*`; a deployed tool should name the site's origin.
+Hosting, response headers (`frame-ancestors https://www.ivankristianto.com`, `X-Robots-Tag: noindex, indexifembedded`), the Worker for server-side fetches, and releases. Don't add any of them without asking.
