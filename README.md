@@ -16,7 +16,7 @@ This repo is a starting point. Nothing is deployed from it yet.
 
 | Path | What |
 | --- | --- |
-| `<slug>/` | One tool: `index.html` plus whatever it needs. |
+| `<slug>/` | One tool, with its own `README.md`, setup and dependencies. |
 | `shared/lab.css` | Fields, buttons, output, tables, status marks, and the framed and standalone modes. |
 | `shared/tokens.css` | Copy of the site's design tokens. |
 | `DESIGN.md` | Copy of the site's design system. |
@@ -25,13 +25,17 @@ This repo is a starting point. Nothing is deployed from it yet.
 | `CLAUDE.md` | Instructions for coding agents. |
 | `scripts/sync-brand.sh` | Refreshes the three copies from the main repo. |
 
-## Run it locally
+## Tools are self-contained
+
+A tool can be anything: a static page, a Worker, something with native binaries. Each one keeps its own `README.md`, dependencies, lockfile and build config in its folder, and you install and run it from there. The root has no `package.json` and no build. Start with the tool's README.
+
+Static tools can be served together from the root, so `../shared/` resolves:
 
 ```bash
 python3 -m http.server 8787
 ```
 
-Then open `http://localhost:8787/font-split/`. The ik2 dev stack frames tools from `http://localhost:8787`, so setting a lab entry's tool URL to that address shows the tool on its entry page.
+The ik2 dev stack frames tools from `http://localhost:8787`.
 
 ## Brand
 
@@ -49,7 +53,7 @@ scripts/sync-brand.sh --check    # fail if a copy has drifted
 
 ## Writing a tool
 
-Start from `font-split/`. Every tool has to:
+Start from `font-split/` and rewrite its `README.md` for the new tool. Then add a row to the table above. Every tool has to:
 
 - set `data-embedded` on `<html>` before first paint when it is framed;
 - post `{ type: 'ik2-lab:resize', height }` to its parent whenever `document.body` changes height;

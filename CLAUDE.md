@@ -12,7 +12,7 @@ Read `PRODUCT.md` for who the tools are for and `docs/tool-guidelines.md` before
 
 | Path | What |
 | --- | --- |
-| `<slug>/` | One tool. `index.html` plus whatever it needs. |
+| `<slug>/` | One tool. Its own `README.md`, `index.html` and whatever else it needs. |
 | `shared/lab.css` | The parts every tool uses. Owned by this repo. |
 | `shared/tokens.css` | Copy of the site's design tokens. Synced, never edited. |
 | `DESIGN.md` | Copy of the site's design system. Synced, never edited. |
@@ -29,7 +29,16 @@ scripts/sync-brand.sh <ref>        # or from a specific tag or branch
 scripts/sync-brand.sh --check      # fail if a copy differs from ik2 at the recorded commit
 ```
 
-`sync-brand.sh` reads a sibling checkout at `../ik2`. Set `IK2_DIR` if it is somewhere else. There is no build step, no package manager and no test runner yet.
+`sync-brand.sh` reads a sibling checkout at `../ik2`. Set `IK2_DIR` if it is somewhere else. The repo root has no build step, no package manager and no test runner.
+
+## Repo versus tool
+
+The repo will hold tools of any kind: a static page, a Worker, something with native binaries. The root assumes nothing about a tool's stack.
+
+- The root `README.md` is about the repo: what it is, the tools table, the layout, the brand, how to add a tool. It never holds one tool's setup or usage.
+- Each tool's `<slug>/README.md` holds everything about that tool: what it does, how to run it, how to install and build it, what runs where, and anything that only works locally.
+- A tool's dependencies, lockfile, build config, env example and scripts stay inside its folder (`<slug>/package.json`, `<slug>/wrangler.toml`, `<slug>/.env.example`). Install and build from that folder. Never add a `package.json` or other manifest at the root.
+- Only `shared/` and `scripts/sync-brand.sh` are shared. If two tools need the same code, ask before adding it to `shared/`.
 
 ## Brand
 
@@ -65,8 +74,9 @@ Rules that constrain every change:
 
 1. Copy `font-split/` to `<slug>/` and replace its content. Keep the two stylesheet links and the `data-embedded` script.
 2. Use the classes in `shared/lab.css`. Check the result against the "Checking a tool" list in `docs/tool-guidelines.md`.
-3. Add the tool to the table in `README.md`.
-4. The entry page is content in WordPress on the main site, not a file here.
+3. Rewrite `<slug>/README.md` for the new tool, with its own setup and run steps. Keep any install or build inside the folder.
+4. Add one row for the tool to the table in the root `README.md`. Nothing else about the tool goes there.
+5. The entry page is content in WordPress on the main site, not a file here.
 
 ## Voice
 
