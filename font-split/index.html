@@ -11,7 +11,7 @@
 <body>
 <header class="lab-standalone">
   <h1>Font split inspector</h1>
-  <a class="lab-standalone__back" href="http://localhost:8080/lab/font-split-inspector/">ivankristianto.com/lab/font-split-inspector</a>
+  <a class="lab-standalone__back" href="https://www.ivankristianto.com/lab/font-split-inspector/" data-site-link>ivankristianto.com/lab/font-split-inspector</a>
 </header>
 
 <main class="lab-split">
@@ -104,8 +104,19 @@ $('form').addEventListener('submit', (e) => { e.preventDefault(); inspect(); });
 $('form').addEventListener('reset', () => setTimeout(inspect));
 inspect();
 
+// The entry's iframe sends its origin as the referrer. A checkout served from localhost talks to the ik2 dev stack.
+const SITE_ORIGINS = ['https://www.ivankristianto.com', 'http://localhost:8080'];
+const siteOrigin = (() => {
+  try {
+    const from = new URL(document.referrer).origin;
+    if (SITE_ORIGINS.includes(from)) return from;
+  } catch {}
+  return ['localhost', '127.0.0.1'].includes(location.hostname) ? SITE_ORIGINS[1] : SITE_ORIGINS[0];
+})();
+for (const a of document.querySelectorAll('a[data-site-link]')) a.href = siteOrigin + new URL(a.href).pathname;
+
 if (window.top !== window) {
-  const report = () => parent.postMessage({ type: 'ik2-lab:resize', height: Math.ceil(document.body.getBoundingClientRect().height) }, '*');
+  const report = () => parent.postMessage({ type: 'ik2-lab:resize', height: Math.ceil(document.body.getBoundingClientRect().height) }, siteOrigin);
   new ResizeObserver(report).observe(document.body);
 }
 </script>
