@@ -1,0 +1,32 @@
+name: brand
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  sync-check:
+    name: brand copies match ik2
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - id: brand
+        run: |
+          echo "commit=$(sed -n 's/^commit: //p' shared/BRAND_VERSION)" >> "$GITHUB_OUTPUT"
+
+      # Only the recorded commit is needed; --check compares against it, not a branch or tag.
+      - uses: actions/checkout@v7
+        with:
+          repository: ivankristianto/ik2
+          ref: ${{ steps.brand.outputs.commit }}
+          path: ik2
+          persist-credentials: false
+
+      - run: scripts/sync-brand.sh --check
+        env:
+          IK2_DIR: ik2

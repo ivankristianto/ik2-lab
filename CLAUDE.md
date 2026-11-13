@@ -35,7 +35,7 @@ scripts/sync-brand.sh --check      # fail if a copy differs from ik2 at the reco
 
 This repo has no brand of its own. It follows the main site's, "Ink, Paper, and Signal".
 
-- `DESIGN.md`, `docs/tool-guidelines.md` and `shared/tokens.css` are copies. To change the brand, change it in ik2, release, then run `scripts/sync-brand.sh`. Never edit the copies; `--check` will fail.
+- `DESIGN.md`, `docs/tool-guidelines.md` and `shared/tokens.css` are copies. To change the brand, change it in ik2, release, then run `scripts/sync-brand.sh`. Never edit the copies; `--check` will fail, and CI runs it on every pull request and push to `main` (`.github/workflows/brand.yml`).
 - File paths inside `DESIGN.md` (`theme.json`, `src/styles/`, `blocks/`) refer to the ik2 repo, not this one. Use it for the rules, not for the paths.
 - `docs/tool-guidelines.md` is the part of the brand written for tools. Where it and `DESIGN.md` seem to disagree about something inside a tool, the guidelines win.
 

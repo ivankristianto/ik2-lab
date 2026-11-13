@@ -47,6 +47,8 @@ scripts/sync-brand.sh --check    # fail if a copy has drifted
 
 `shared/BRAND_VERSION` records which ik2 ref and commit the copies came from.
 
+The `brand` workflow runs `scripts/sync-brand.sh --check` against that commit on every pull request and push to `main`, so a hand-edited copy fails CI.
+
 ## Writing a tool
 
 Start from `font-split/`. Every tool has to:
