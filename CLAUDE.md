@@ -4,7 +4,7 @@ Guidance for Claude Code when working in this repository.
 
 ## What this repo is
 
-Small tools and experiments for [ivankristianto.com/lab](https://www.ivankristianto.com/lab/). Each tool lives in its own folder under `experiments/`, is served from `lab.ivankristianto.com/<slug>/`, and is shown on its entry page on the main site inside a sandboxed, cross-origin iframe. The pages around the tools (the index, the entry, the frame) live in the main repo, [ivankristianto/ik2](https://github.com/ivankristianto/ik2). Don't build page chrome here.
+Small tools and experiments for [ivankristianto.com/lab](https://www.ivankristianto.com/lab/). Each tool lives in its own folder under `experiments/`, is served from `lab.ivankristianto.com/experiments/<slug>/`, and is shown on its entry page on the main site inside a sandboxed, cross-origin iframe. The pages around the tools (the index, the entry, the frame) live in the main repo, [ivankristianto/ik2](https://github.com/ivankristianto/ik2). Don't build page chrome here.
 
 Read `PRODUCT.md` for who the tools are for and `docs/tool-guidelines.md` before touching any tool's markup or CSS.
 
@@ -12,7 +12,7 @@ Read `PRODUCT.md` for who the tools are for and `docs/tool-guidelines.md` before
 
 | Path | What |
 | --- | --- |
-| `experiments/<slug>/` | One tool. Its own `README.md`, `index.html` and whatever else it needs. Served at `/<slug>/`. |
+| `experiments/<slug>/` | One tool. Its own `README.md`, `index.html` and whatever else it needs. Served at the same path, `/experiments/<slug>/`. A later category such as `tools/` gets its own top-level folder the same way. |
 | `shared/lab.css` | The parts every tool uses. Owned by this repo. |
 | `shared/tokens.css` | Copy of the site's design tokens. Synced, never edited. |
 | `DESIGN.md` | Copy of the site's design system. Synced, never edited. |
@@ -32,7 +32,7 @@ scripts/sync-brand.sh <ref>        # or from a specific tag or branch
 scripts/sync-brand.sh --check      # fail if a copy differs from ik2 at the recorded commit
 
 docker build -t ik2-lab .          # the image Dokploy runs
-docker run --rm -p 8787:80 -e FRAME_ANCESTORS=http://localhost:8080 ik2-lab   # same port, prod paths (/<slug>/) and headers
+docker run --rm -p 8787:80 -e FRAME_ANCESTORS=http://localhost:8080 ik2-lab   # same port and paths, with the prod headers
 scripts/release.sh patch --dry-run # release; only when Ivan asks
 ```
 
@@ -82,7 +82,7 @@ Rules that constrain every change:
 
 ## Adding a tool
 
-1. Copy `experiments/font-split/` to `experiments/<slug>/` and replace its content. Keep the two stylesheet links (`/shared/tokens.css`, `/shared/lab.css`, root-absolute so they resolve both locally and at `/<slug>/`) and the `data-embedded` script.
+1. Copy `experiments/font-split/` to `experiments/<slug>/` and replace its content. Keep the two stylesheet links (`/shared/tokens.css`, `/shared/lab.css`, root-absolute so they work at any depth) and the `data-embedded` script.
 2. Use the classes in `shared/lab.css`. Check the result against the "Checking a tool" list in `docs/tool-guidelines.md`.
 3. Rewrite `experiments/<slug>/README.md` for the new tool, with its own setup and run steps. Keep any install or build inside the folder.
 4. Add one row for the tool to the table in the root `README.md`. Nothing else about the tool goes there.

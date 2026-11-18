@@ -34,7 +34,7 @@ A tool here is never a standalone product. It is the working part of a write-up:
 
 ## Operating Context
 
-- Each tool is served from `https://lab.ivankristianto.com/<slug>/` and framed on `https://www.ivankristianto.com/lab/<slug>/` in a sandboxed, cross-origin iframe.
+- Each tool is served from `https://lab.ivankristianto.com/experiments/<slug>/` and framed on `https://www.ivankristianto.com/lab/<slug>/` in a sandboxed, cross-origin iframe.
 - The entry page owns the title, the lead, the date and the `source` and `new tab` links. The framed tool shows none of them.
 - The frame is as wide as the article text (60rem) and runs edge to edge on phones. The page scrolls; the tool reports its height and never scrolls inside the frame.
 - Opened on its own, a tool shows its name and a link back to its entry.
