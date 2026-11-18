@@ -31,18 +31,6 @@ body {
   background: var(--wp--preset--color--surface);
 }
 
-@media (max-width: 40em) {
-
-  /* 16px is the smallest control text iOS leaves alone; anything smaller zooms the page on focus. */
-  .lab-input,
-  .lab-textarea,
-  .lab-select,
-  .lab-textarea--code,
-  .lab-input--code {
-    font-size: 1rem;
-  }
-}
-
 [data-embedded] .lab-standalone {
   display: none;
 }
@@ -374,6 +362,19 @@ samp {
 .lab-specimen mark[data-hit="none"] {
   color: var(--wp--preset--color--dust);
   border-bottom-style: dotted;
+}
+
+@media (max-width: 40em) {
+
+  /* 16px is the smallest control text iOS leaves alone; anything smaller zooms the page on focus.
+     Last in the file so it beats the --code size rules, which have the same specificity. */
+  .lab-input,
+  .lab-textarea,
+  .lab-select,
+  .lab-textarea--code,
+  .lab-input--code {
+    font-size: 1rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
