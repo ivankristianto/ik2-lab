@@ -15,7 +15,7 @@ cd ../..
 python3 -m http.server 8787
 ```
 
-Then open `http://localhost:8787/experiments/font-split/`. Production serves it at `https://lab.ivankristianto.com/font-split/`; to get that path locally, run the image as the root README shows.
+Then open `http://localhost:8787/experiments/font-split/`, the same path it has in production at `https://lab.ivankristianto.com/experiments/font-split/`.
 
 ## Where the data goes
 
