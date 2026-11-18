@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tag main as the next vX.Y.Z, push the tag and create the GitHub release, which builds and deploys the image.
+# Tag main as the next vX.Y.Z and push it, which builds and deploys the image, then create the GitHub release.
 # Usage: scripts/release.sh <patch|minor|major|X.Y.Z> [--dry-run]
 set -euo pipefail
 
@@ -58,12 +58,12 @@ brand="$(gh run list --workflow brand.yml --commit "$head" --limit 1 --json stat
 	--jq '.[0] | if . == null then "none" elif .status != "completed" then "pending" else .conclusion end')"
 case "$brand" in
 	success) ;;
-	none) echo "warning: no brand run found for HEAD, releasing anyway." ;;
+	none) echo "release: warning: no brand run found for HEAD, releasing anyway." >&2 ;;
 	*) fail "the brand workflow for HEAD is \"$brand\". Wait for it to pass, then retry." ;;
 esac
 
 if [ "$dry_run" -eq 1 ]; then
-	echo "dry run: would release ${latest:-nothing} -> $tag from $(git rev-parse --short HEAD)"
+	echo "release: dry run, would release ${latest:-nothing} -> $tag from $(git rev-parse --short HEAD)"
 	exit 0
 fi
 
@@ -71,5 +71,5 @@ git tag -a "$tag" -m "$tag"
 git push origin "$tag"
 gh release create "$tag" --verify-tag --generate-notes --title "$tag"
 
-echo "Released $tag."
-echo "The image builds and Dokploy redeploys from: $(gh repo view --json url --jq .url)/actions/workflows/build.yml"
+echo "release: released $tag."
+echo "release: the image builds and Dokploy redeploys from: $(gh repo view --json url --jq .url)/actions/workflows/build.yml"
