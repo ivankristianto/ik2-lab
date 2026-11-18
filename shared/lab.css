@@ -178,6 +178,11 @@ samp {
   resize: vertical;
 }
 
+/* For a few lines of prose, such as sample text, rather than a pasted file. */
+.lab-textarea--short {
+  min-height: 6rem;
+}
+
 /* Pasted code and data sit on Code Paper, like a code block on the site. */
 .lab-textarea--code,
 .lab-input--code {
@@ -293,7 +298,8 @@ samp {
   border-bottom: 1px solid var(--wp--preset--color--line);
   text-align: left;
   vertical-align: baseline;
-  overflow-wrap: break-word;
+  /* anywhere, not break-word: only anywhere lets a long URL shrink an auto-layout table's width. */
+  overflow-wrap: anywhere;
 }
 
 .lab-table th {
