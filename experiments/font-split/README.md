@@ -17,6 +17,12 @@ python3 -m http.server 8787
 
 Then open `http://localhost:8787/experiments/font-split/`, the same path it has in production at `https://lab.ivankristianto.com/experiments/font-split/`.
 
+## What it checks
+
+It reads the CSS only. For each character it picks the last rule, within the same family, weight and style, whose `unicode-range` covers it, which is how the browser chooses. When the rules describe more than one face, such as a Google Fonts link with several weights, a picker shows one face at a time.
+
+It never opens the font files. A file subset without a glyph its range claims still shows as covered here, and the browser falls back when it finds the glyph missing.
+
 ## Where the data goes
 
 Nowhere. The rules and text are parsed in the browser and nothing is sent to a server.

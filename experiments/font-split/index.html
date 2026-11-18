@@ -18,7 +18,7 @@
   <form class="lab-stack" id="form">
     <div class="lab-field">
       <label class="lab-label" for="css">@font-face rules</label>
-      <textarea class="lab-textarea lab-textarea--code" id="css" spellcheck="false">@font-face {
+      <textarea class="lab-textarea lab-textarea--code" id="css" spellcheck="false" aria-describedby="css-hint">@font-face {
   font-family: "Inter";
   src: url("inter-latin.woff2") format("woff2");
   unicode-range: U+0000-00FF, U+0131, U+2000-206F;
@@ -33,11 +33,12 @@
   src: url("inter-vietnamese.woff2") format("woff2");
   unicode-range: U+0102-0103, U+1EA0-1EF9, U+20AB;
 }</textarea>
+      <span class="lab-hint" id="css-hint">Paste the @font-face rules from your stylesheet, or open your Google Fonts CSS link and copy what it returns. The tool reads each rule's unicode-range and never downloads the fonts.</span>
     </div>
     <div class="lab-field">
       <label class="lab-label" for="sample">sample text</label>
-      <input class="lab-input" id="sample" value="Café Łódź, Việt Nam 北京">
-      <span class="lab-hint">Nothing leaves your browser.</span>
+      <textarea class="lab-textarea lab-textarea--short" id="sample" spellcheck="false" aria-describedby="sample-hint">Café Łódź, Việt Nam 北京</textarea>
+      <span class="lab-hint" id="sample-hint">The text your page shows, on as many lines as you need. Press Ctrl+Enter (⌘+Enter on a Mac) to inspect. Nothing leaves your browser.</span>
     </div>
     <div class="lab-actions">
       <button class="lab-button" type="submit">Inspect</button>
@@ -47,6 +48,14 @@
 
   <section class="lab-output" aria-live="polite">
     <div class="lab-output__head"><span>result</span><span class="lab-output__note" id="note"></span></div>
+    <div id="face-wrap" hidden>
+      <div class="lab-field">
+        <label class="lab-label" for="face">face</label>
+        <select class="lab-select" id="face" aria-describedby="face-hint"></select>
+        <span class="lab-hint" id="face-hint">Your rules describe more than one family, weight or style. The browser picks files for each face on its own, so choose the one your text is set in.</span>
+      </div>
+    </div>
+    <p class="lab-hint">Hover a character to see which file draws it. A dotted underline means no rule covers it, so the browser falls back to the next font in the stack. The table lists the characters each file draws.</p>
     <p class="lab-specimen" id="specimen"></p>
     <table class="lab-table">
       <thead><tr><th>file</th><th>characters</th><th class="num">count</th></tr></thead>
@@ -58,24 +67,46 @@
 <script>
 const $ = (id) => document.getElementById(id);
 
+// The browser matches unicode-range only among rules for the same family, weight and style.
+const WEIGHT_NAMES = { normal: '400', bold: '700' };
+
 function parseFaces(css) {
   return [...css.matchAll(/@font-face\s*{([^}]*)}/g)].map((m) => {
+    const prop = (name) => (new RegExp(name + '\\s*:\\s*([^;]+)', 'i').exec(m[1]) || [])[1]?.trim();
     const src = /url\(\s*["']?([^"')]+)/.exec(m[1]);
     const range = /unicode-range\s*:\s*([^;]+)/.exec(m[1]);
+    const family = (prop('font-family') || 'unnamed family').replace(/^["']|["']$/g, '');
+    const weight = (prop('font-weight') || 'normal').toLowerCase();
+    const style = (prop('font-style') || 'normal').toLowerCase().split(/\s+/)[0];
+    const face = [family, WEIGHT_NAMES[weight] || weight, style === 'normal' ? '' : style].join(' ').trim();
     const ranges = (range ? range[1] : 'U+0-10FFFF').split(',').map((r) => {
       const [a, b] = r.trim().replace(/^U\+/i, '').split('-');
-      return [parseInt(a, 16), parseInt(b || a, 16)];
+      // A wildcard such as U+4?? covers U+400 to U+4FF.
+      return [parseInt(a.replace(/\?/g, '0'), 16), parseInt((b || a).replace(/\?/g, 'F'), 16)];
     });
-    return { file: src ? src[1] : '(no src)', ranges };
+    return { file: src ? src[1] : '(no src)', ranges, face };
   });
 }
 
+function pickFace(all) {
+  const names = [...new Set(all.map((f) => f.face))];
+  const select = $('face');
+  if ([...select.options].map((o) => o.value).join('\n') !== names.join('\n')) {
+    const kept = select.value;
+    select.replaceChildren(...names.map((n) => new Option(n, n)));
+    if (names.includes(kept)) select.value = kept;
+  }
+  $('face-wrap').hidden = names.length < 2;
+  return all.filter((f) => f.face === select.value);
+}
+
 function inspect() {
-  const faces = parseFaces($('css').value);
+  const faces = pickFace(parseFaces($('css').value));
   const hits = new Map();
   const specimen = $('specimen');
   specimen.textContent = '';
   for (const ch of $('sample').value) {
+    if (ch === '\n') { specimen.append(document.createElement('br')); continue; }
     const cp = ch.codePointAt(0);
     const face = faces.findLast((f) => f.ranges.some(([a, b]) => cp >= a && cp <= b));
     const file = face ? face.file : 'fallback font';
@@ -97,10 +128,16 @@ function inspect() {
     }
     $('rows').append(tr);
   }
-  $('note').textContent = faces.length + ' faces, ' + hits.size + ' used';
+  const files = [...hits.keys()].filter((f) => f !== 'fallback font').length;
+  $('note').textContent = faces.length + (faces.length === 1 ? ' rule, ' : ' rules, ') + files + (files === 1 ? ' file used' : ' files used');
 }
 
 $('form').addEventListener('submit', (e) => { e.preventDefault(); inspect(); });
+$('face').addEventListener('change', inspect);
+// Enter adds a line in a textarea, so Ctrl+Enter or Cmd+Enter runs the inspection.
+$('form').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); inspect(); }
+});
 $('form').addEventListener('reset', () => setTimeout(inspect));
 inspect();
 
