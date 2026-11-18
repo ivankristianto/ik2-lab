@@ -9,7 +9,7 @@ The goal is `https://lab.ivankristianto.com/font-split/` served from Dokploy and
 - **The site side is live.** ik2 [v0.33.0](https://github.com/ivankristianto/ik2/releases/tag/v0.33.0) shipped on 2026-11-17 with the `lab` post type, the frame and the index. The page [www.ivankristianto.com/lab/](https://www.ivankristianto.com/lab/) is published (page ID 2188) and shows "Nothing here yet." because prod has no lab entries.
 - **ik2 needs no change for this work.** It frames tools from `https://lab.ivankristianto.com` by default (`IK2_LAB_ORIGIN` only overrides it locally), and refuses any tool URL on another origin.
 - **Brand copies are pinned** to ik2 `v0.33.0` (`shared/BRAND_VERSION`), and the `brand` workflow checks them on every pull request.
-- **The demo is deployable.** `font-split/` sends its resize message and its back link to the site origin, with `http://localhost:8080` for the dev stack (PR 1).
+- **The demo is deployable.** `experiments/font-split/` sends its resize message and its back link to the site origin, with `http://localhost:8080` for the dev stack (PR 1).
 - **Tasks 1 to 3 are written**, on the branches `dokploy-image` (image and nginx config) and `dokploy-release` (build workflow and `scripts/release.sh`, stacked on the first). The image passes every local check in task 5. The workflow has not run yet: it can only run once it is on `main`.
 - **Nothing is hosted.**
 
@@ -99,7 +99,7 @@ Locally, run the image on port 8787 with `FRAME_ANCESTORS=http://localhost:8080`
 Not a change in this repo. In wp-admin on the main site, a lab entry needs:
 
 - **Fields:** title, slug `font-split-inspector`, an excerpt (the index blurb), and the write-up in the body.
-- **Tool and source:** in the "Lab tool" panel, the tool URL `https://lab.ivankristianto.com/font-split/` and the source `https://github.com/ivankristianto/ik2-lab/tree/main/font-split`.
+- **Tool and source:** in the "Lab tool" panel, the tool URL `https://lab.ivankristianto.com/font-split/` and the source `https://github.com/ivankristianto/ik2-lab/tree/main/experiments/font-split`.
 - **Heights:** both starting heights, measured from the hosted tool at desktop and phone widths. On the dev stack the content measured 464px at 1440 wide and 938px at 390 wide (2026-11-18), so the 900px narrow start was short.
 - **Specimen:** up to four lines of real output for the index row, for example the sample sentence, then one line per font file with its character count.
 
@@ -113,7 +113,7 @@ A small script that fetches each tool's headers from the deployed host and fails
 
 - **Link and oEmbed preview** needs the Worker. Say plainly under its input that the URL is fetched by a server.
 - **JPEG XL round-trip** needs native binaries. Today it is a write-up with a results table.
-- **New tools** start from `font-split/`: keep the two stylesheet links, the `data-embedded` script and the origin rules, add each one to the README table, and add its folder to the Dockerfile whitelist.
+- **New tools** start from `experiments/font-split/`: keep the two stylesheet links, the `data-embedded` script and the origin rules, add each one to the README table, and add its folder to the Dockerfile whitelist.
 
 ## Rules to keep in mind
 

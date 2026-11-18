@@ -10,13 +10,13 @@ The static tools ship as one nginx image, built to run on Dokploy as `lab.ivankr
 
 | Tool | What it does | Status |
 | --- | --- | --- |
-| [`font-split/`](font-split/) | Paste `@font-face` rules and sample text, see which font file draws each character. | demo |
+| [`font-split`](experiments/font-split/) | Paste `@font-face` rules and sample text, see which font file draws each character. | demo |
 
 ## Layout
 
 | Path | What |
 | --- | --- |
-| `<slug>/` | One tool, with its own `README.md`, setup and dependencies. |
+| `experiments/<slug>/` | One tool, with its own `README.md`, setup and dependencies. Served at `lab.ivankristianto.com/<slug>/`. |
 | `shared/lab.css` | Fields, buttons, output, tables, status marks, and the framed and standalone modes. |
 | `shared/tokens.css` | Copy of the site's design tokens. |
 | `DESIGN.md` | Copy of the site's design system. |
@@ -32,13 +32,13 @@ The static tools ship as one nginx image, built to run on Dokploy as `lab.ivankr
 
 A tool can be anything: a static page, a Worker, something with native binaries. Each one keeps its own `README.md`, dependencies, lockfile and build config in its folder, and you install and run it from there. The root has no `package.json` and no build. Start with the tool's README.
 
-Static tools can be served together from the root, so `../shared/` resolves:
+Tools link `/shared/...` from the site root. Serve the repo root and a tool is at `http://localhost:8787/experiments/<slug>/`:
 
 ```bash
 python3 -m http.server 8787
 ```
 
-The ik2 dev stack frames tools from `http://localhost:8787`.
+The ik2 dev stack frames tools from `http://localhost:8787`, so point the local entry's tool URL at that path, or run the image below to get the production path `/<slug>/`.
 
 ## Running the image
 
@@ -48,6 +48,17 @@ The image serves only the files its `Dockerfile` copies, with the production hea
 docker build -t ik2-lab .
 docker run --rm -p 8787:80 -e FRAME_ANCESTORS=http://localhost:8080 ik2-lab
 ```
+
+To edit a tool without rebuilding, mount it and `shared/` over the copies in the image:
+
+```bash
+docker run --rm -p 8787:80 -e FRAME_ANCESTORS=http://localhost:8080 \
+  -v "$PWD/shared:/srv/lab/shared:ro" \
+  -v "$PWD/experiments/font-split:/srv/lab/font-split:ro" \
+  ik2-lab
+```
+
+The mounted folder serves every file in it, README included, so check the whitelist with a plain run before a release.
 
 ## Releasing
 
@@ -78,7 +89,7 @@ The `brand` workflow runs `scripts/sync-brand.sh --check` against that commit on
 
 ## Writing a tool
 
-Start from `font-split/` and rewrite its `README.md` for the new tool. Then add a row to the table above. Every tool has to:
+Start from `experiments/font-split/`, copy it to `experiments/<slug>/`, and rewrite its `README.md` for the new tool. Then add a row to the table above. Every tool has to:
 
 - set `data-embedded` on `<html>` before first paint when it is framed;
 - post `{ type: 'ik2-lab:resize', height }` to the site's origin, never `'*'`, whenever `document.body` changes height;
