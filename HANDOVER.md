@@ -18,7 +18,7 @@ The goal is `https://lab.ivankristianto.com/font-split/` served from Dokploy and
 - **Hosting is Dokploy**, the same server that runs the main site, as its own application with its own releases. Ivan, 2026-11-17.
 - **Static first.** Every tool so far is plain files, so the image is nginx serving a whitelist of files.
 - **Release flow** is the same shape as ik2: `scripts/release.sh` pushes a `v*` tag, which builds the image, pushes it to GHCR and calls the Dokploy webhook. Ivan, 2026-11-18.
-- **The Dokploy application** is created by Claude with the Dokploy credential in the `Agents` vault, after showing Ivan the calls. Ivan, 2026-11-18.
+- **The Dokploy application** is created by Claude through the Dokploy API, after showing Ivan the calls. Ivan, 2026-11-18.
 
 ## Still Ivan's call
 
@@ -26,7 +26,7 @@ Ask before building any of these.
 
 1. **Releases.** Run `scripts/release.sh` only when Ivan asks.
 2. **The Worker** for the link and oEmbed preview tool. Not part of this handover.
-3. **DNS and repo secrets.** The DNS record and the `DOKPLOY_WEBHOOK_URL` secret are Ivan's. The Cloudflare token in the `Agents` vault can read the zone and purge its cache, nothing more.
+3. **DNS and repo secrets.** The DNS record and the `DOKPLOY_WEBHOOK_URL` secret are Ivan's. Claude's Cloudflare token can read the zone and purge its cache, nothing more.
 
 ## Tasks, in order
 
