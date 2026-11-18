@@ -25,7 +25,8 @@ done
 semver='^([0-9]+)\.([0-9]+)\.([0-9]+)$'
 
 [ "$(git branch --show-current)" = "main" ] || fail "releases are cut from main. Switch to main first."
-[ -z "$(git status --porcelain)" ] || fail "the working tree is not clean. Commit or stash first."
+# Untracked files never reach a tag, so only tracked changes block a release.
+[ -z "$(git status --porcelain --untracked-files=no)" ] || fail "the working tree has uncommitted changes. Commit or stash first."
 gh auth status >/dev/null 2>&1 || fail "gh is not signed in. Run gh auth login first."
 git fetch --quiet --tags origin main
 [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] || fail "local main differs from origin/main. Pull or push first."
