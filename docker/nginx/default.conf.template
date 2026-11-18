@@ -19,7 +19,7 @@ server {
     charset utf-8;
     charset_types text/css;
     # Behind Dokploy's proxy an absolute redirect would leak http:// and the
-    # container port, so /font-split redirects with a relative Location.
+    # container port, so /experiments/font-split redirects with a relative Location.
     absolute_redirect off;
 
     gzip on;
@@ -45,8 +45,8 @@ server {
         return 200 "ok\n";
     }
 
-    # There is no lab home page yet; the index lives on the main site.
-    location = / {
+    # There is no lab home page or category page yet; the index lives on the main site.
+    location ~ ^/(?:experiments/?)?$ {
         return 302 https://www.ivankristianto.com/lab/;
     }
 

@@ -13,7 +13,7 @@ COPY docker/nginx/default.conf.template /etc/nginx/templates/default.conf.templa
 # The whitelist. Copy only what a visitor loads, file by file, so a tool's
 # README, manifest or env file never reaches the web root.
 COPY shared/tokens.css shared/lab.css /srv/lab/shared/
-COPY experiments/font-split/index.html /srv/lab/font-split/
+COPY experiments/font-split/index.html /srv/lab/experiments/font-split/
 
 # 127.0.0.1, not localhost: the template replaces the packaged default.conf, so
 # nginx listens on IPv4 only and localhost (::1 first) would be refused.
