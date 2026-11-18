@@ -61,7 +61,7 @@ The lab carries the same brand as the main site, "Ink, Paper, and Signal". It ha
 
 ## Evidence on Hand
 
-- `font-split/`: a working demo, the font split inspector.
+- `experiments/font-split/`: a working demo, the font split inspector.
 - `shared/lab.css`: fields, buttons, output, tables and status marks, built from the tokens.
 - Ideas not built yet: a link and oEmbed preview (needs a server-side fetch) and a JPEG XL round-trip experiment (needs native binaries).
 - There are no usage numbers, testimonials or benchmarks. Don't invent any.

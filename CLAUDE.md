@@ -4,7 +4,7 @@ Guidance for Claude Code when working in this repository.
 
 ## What this repo is
 
-Small tools and experiments for [ivankristianto.com/lab](https://www.ivankristianto.com/lab/). Each tool lives in its own folder, is served from `lab.ivankristianto.com/<slug>/`, and is shown on its entry page on the main site inside a sandboxed, cross-origin iframe. The pages around the tools (the index, the entry, the frame) live in the main repo, [ivankristianto/ik2](https://github.com/ivankristianto/ik2). Don't build page chrome here.
+Small tools and experiments for [ivankristianto.com/lab](https://www.ivankristianto.com/lab/). Each tool lives in its own folder under `experiments/`, is served from `lab.ivankristianto.com/<slug>/`, and is shown on its entry page on the main site inside a sandboxed, cross-origin iframe. The pages around the tools (the index, the entry, the frame) live in the main repo, [ivankristianto/ik2](https://github.com/ivankristianto/ik2). Don't build page chrome here.
 
 Read `PRODUCT.md` for who the tools are for and `docs/tool-guidelines.md` before touching any tool's markup or CSS.
 
@@ -12,7 +12,7 @@ Read `PRODUCT.md` for who the tools are for and `docs/tool-guidelines.md` before
 
 | Path | What |
 | --- | --- |
-| `<slug>/` | One tool. Its own `README.md`, `index.html` and whatever else it needs. |
+| `experiments/<slug>/` | One tool. Its own `README.md`, `index.html` and whatever else it needs. Served at `/<slug>/`. |
 | `shared/lab.css` | The parts every tool uses. Owned by this repo. |
 | `shared/tokens.css` | Copy of the site's design tokens. Synced, never edited. |
 | `DESIGN.md` | Copy of the site's design system. Synced, never edited. |
@@ -26,13 +26,13 @@ Read `PRODUCT.md` for who the tools are for and `docs/tool-guidelines.md` before
 ## Commands
 
 ```bash
-python3 -m http.server 8787        # serve the repo; the ik2 dev stack frames tools from http://localhost:8787
+python3 -m http.server 8787        # serve the repo; a tool is at http://localhost:8787/experiments/<slug>/
 scripts/sync-brand.sh              # copy the brand files from ../ik2 at its newest release tag
 scripts/sync-brand.sh <ref>        # or from a specific tag or branch
 scripts/sync-brand.sh --check      # fail if a copy differs from ik2 at the recorded commit
 
 docker build -t ik2-lab .          # the image Dokploy runs
-docker run --rm -p 8787:80 -e FRAME_ANCESTORS=http://localhost:8080 ik2-lab   # same port, with the prod headers
+docker run --rm -p 8787:80 -e FRAME_ANCESTORS=http://localhost:8080 ik2-lab   # same port, prod paths (/<slug>/) and headers
 scripts/release.sh patch --dry-run # release; only when Ivan asks
 ```
 
@@ -43,8 +43,8 @@ scripts/release.sh patch --dry-run # release; only when Ivan asks
 The repo will hold tools of any kind: a static page, a Worker, something with native binaries. The root assumes nothing about a tool's stack.
 
 - The root `README.md` is about the repo: what it is, the tools table, the layout, the brand, how to add a tool. It never holds one tool's setup or usage.
-- Each tool's `<slug>/README.md` holds everything about that tool: what it does, how to run it, how to install and build it, what runs where, and anything that only works locally.
-- A tool's dependencies, lockfile, build config, env example and scripts stay inside its folder (`<slug>/package.json`, `<slug>/wrangler.toml`, `<slug>/.env.example`). Install and build from that folder. Never add a `package.json` or other manifest at the root.
+- Each tool's `experiments/<slug>/README.md` holds everything about that tool: what it does, how to run it, how to install and build it, what runs where, and anything that only works locally.
+- A tool's dependencies, lockfile, build config, env example and scripts stay inside its folder (`experiments/<slug>/package.json`, `experiments/<slug>/wrangler.toml`, `experiments/<slug>/.env.example`). Install and build from that folder. Never add a `package.json` or other manifest at the root.
 - Only `shared/`, `scripts/`, the `Dockerfile`, `docker/nginx/` and the workflows are shared. If two tools need the same code, ask before adding it to `shared/`.
 
 ## Brand
@@ -72,19 +72,19 @@ Rules that constrain every change:
 2. Post `{ type: 'ik2-lab:resize', height }` to the parent whenever `document.body` changes height (a `ResizeObserver` on `document.body`). Never scroll inside the frame. Post to the site origin, never `'*'`.
    - Work out the site origin from an allowlist, `https://www.ivankristianto.com` and the dev stack's `http://localhost:8080`. Pick the one that matches `document.referrer`. If none matches, use the dev origin when the tool is served from `localhost` and the production origin otherwise. Don't use `location.ancestorOrigins`; only Chromium has it.
    - Write every link to the main site with its production URL and a `data-site-link` attribute. The same script swaps in the site origin, so a dev checkout links back to `localhost:8080`.
-   - Copy that script from `font-split/index.html`.
+   - Copy that script from `experiments/font-split/index.html`.
 3. Open every link in a new tab (`target="_blank" rel="noopener"`). The sandbox blocks top navigation.
 4. Show a useful result on load.
 5. Say under the input whether it stays in the browser.
 6. Work with the keyboard alone, with controls 44px tall or more and 16px text on phones.
 
-`font-split/index.html` is the reference for all six.
+`experiments/font-split/index.html` is the reference for all six.
 
 ## Adding a tool
 
-1. Copy `font-split/` to `<slug>/` and replace its content. Keep the two stylesheet links and the `data-embedded` script.
+1. Copy `experiments/font-split/` to `experiments/<slug>/` and replace its content. Keep the two stylesheet links (`/shared/tokens.css`, `/shared/lab.css`, root-absolute so they resolve both locally and at `/<slug>/`) and the `data-embedded` script.
 2. Use the classes in `shared/lab.css`. Check the result against the "Checking a tool" list in `docs/tool-guidelines.md`.
-3. Rewrite `<slug>/README.md` for the new tool, with its own setup and run steps. Keep any install or build inside the folder.
+3. Rewrite `experiments/<slug>/README.md` for the new tool, with its own setup and run steps. Keep any install or build inside the folder.
 4. Add one row for the tool to the table in the root `README.md`. Nothing else about the tool goes there.
 5. Add a `COPY` line to the `Dockerfile` for each file a visitor loads. Never copy the tool's `README.md`, manifest, lockfile or env file. A file left out is a 404 in production.
 6. The entry page is content in WordPress on the main site, not a file here.
