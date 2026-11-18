@@ -2,7 +2,7 @@
 
 Small tools and experiments for [ivankristianto.com/lab](https://www.ivankristianto.com/lab/).
 
-Each tool answers one question, runs in the browser, and needs no account. It is served from `lab.ivankristianto.com/<slug>/` and shown on its entry page on the main site inside a sandboxed frame. The pages around the tools live in [ivankristianto/ik2](https://github.com/ivankristianto/ik2).
+Each tool answers one question, runs in the browser, and needs no account. It is served from `lab.ivankristianto.com/experiments/<slug>/` and shown on its entry page on the main site inside a sandboxed frame. The pages around the tools live in [ivankristianto/ik2](https://github.com/ivankristianto/ik2).
 
 The static tools ship as one nginx image, built to run on Dokploy as `lab.ivankristianto.com`. It is not deployed yet.
 
@@ -16,7 +16,7 @@ The static tools ship as one nginx image, built to run on Dokploy as `lab.ivankr
 
 | Path | What |
 | --- | --- |
-| `experiments/<slug>/` | One tool, with its own `README.md`, setup and dependencies. Served at `lab.ivankristianto.com/<slug>/`. |
+| `experiments/<slug>/` | One tool, with its own `README.md`, setup and dependencies. Served at `lab.ivankristianto.com/experiments/<slug>/`. |
 | `shared/lab.css` | Fields, buttons, output, tables, status marks, and the framed and standalone modes. |
 | `shared/tokens.css` | Copy of the site's design tokens. |
 | `DESIGN.md` | Copy of the site's design system. |
@@ -32,13 +32,13 @@ The static tools ship as one nginx image, built to run on Dokploy as `lab.ivankr
 
 A tool can be anything: a static page, a Worker, something with native binaries. Each one keeps its own `README.md`, dependencies, lockfile and build config in its folder, and you install and run it from there. The root has no `package.json` and no build. Start with the tool's README.
 
-Tools link `/shared/...` from the site root. Serve the repo root and a tool is at `http://localhost:8787/experiments/<slug>/`:
+The repo's layout is the site's layout: `experiments/font-split/` is served at `/experiments/font-split/`, and tools link `/shared/...` from the root. Serve the repo root:
 
 ```bash
 python3 -m http.server 8787
 ```
 
-The ik2 dev stack frames tools from `http://localhost:8787`, so point the local entry's tool URL at that path, or run the image below to get the production path `/<slug>/`.
+The ik2 dev stack frames tools from `http://localhost:8787`, so a local entry's tool URL is `http://localhost:8787/experiments/<slug>/`, the same path as in production.
 
 ## Running the image
 
@@ -54,7 +54,7 @@ To edit a tool without rebuilding, mount it and `shared/` over the copies in the
 ```bash
 docker run --rm -p 8787:80 -e FRAME_ANCESTORS=http://localhost:8080 \
   -v "$PWD/shared:/srv/lab/shared:ro" \
-  -v "$PWD/experiments/font-split:/srv/lab/font-split:ro" \
+  -v "$PWD/experiments/font-split:/srv/lab/experiments/font-split:ro" \
   ik2-lab
 ```
 

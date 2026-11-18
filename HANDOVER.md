@@ -2,7 +2,7 @@
 
 Written 2026-11-17, updated 2026-11-18. Delete this file once the tasks below are done.
 
-The goal is `https://lab.ivankristianto.com/font-split/` served from Dokploy and framed on its entry page on `https://www.ivankristianto.com/lab/`. Read `CLAUDE.md` and `PRODUCT.md` first. The tool contract is in the ik2 spec, section "Contract for a tool": [docs/specs/2026-11-11-lab-section-design.md](https://github.com/ivankristianto/ik2/blob/main/docs/specs/2026-11-11-lab-section-design.md). The reasoning for a separate instance is in [ADR 0005](https://github.com/ivankristianto/ik2/blob/main/docs/adr/0005-lab-shell-and-separate-instance.md).
+The goal is `https://lab.ivankristianto.com/experiments/font-split/` served from Dokploy and framed on its entry page on `https://www.ivankristianto.com/lab/`. Read `CLAUDE.md` and `PRODUCT.md` first. The tool contract is in the ik2 spec, section "Contract for a tool": [docs/specs/2026-11-11-lab-section-design.md](https://github.com/ivankristianto/ik2/blob/main/docs/specs/2026-11-11-lab-section-design.md). The reasoning for a separate instance is in [ADR 0005](https://github.com/ivankristianto/ik2/blob/main/docs/adr/0005-lab-shell-and-separate-instance.md).
 
 ## Where things stand
 
@@ -48,7 +48,7 @@ Use the official image's template support (`/etc/nginx/templates/default.conf.te
 - **`X-Content-Type-Options: nosniff`** and **`Referrer-Policy: strict-origin-when-cross-origin`**.
 - **No HSTS in nginx.** HSTS is a Cloudflare zone setting for the site; a second header would duplicate it.
 - **Cache.** Files are not fingerprinted, so no `immutable`. HTML `no-cache`; `shared/*.css` and tool assets a short `max-age` (5 minutes) with ETags.
-- **`absolute_redirect off;`** so `/font-split` redirects to `/font-split/` without leaking the container's port or `http://` behind the proxy.
+- **`absolute_redirect off;`** so `/experiments/font-split` redirects to `/experiments/font-split/` without leaking the container's port or `http://` behind the proxy.
 - **`/` redirects** to `https://www.ivankristianto.com/lab/` (302 for now). There is no lab home page.
 - **Deny dotfiles**, and 404 anything outside the whitelist.
 - **The `add_header` gotcha** that bit ik2: an `add_header` inside a `location` replaces every `add_header` from the server block. Either keep all headers at server level or repeat them in each location. Check with `curl -sI` on an HTML page and on a CSS file.
@@ -82,24 +82,25 @@ In this order, after both branches merge:
 On the host:
 
 ```bash
-curl -sI https://lab.ivankristianto.com/font-split/     # 200, frame-ancestors, X-Robots-Tag, no X-Frame-Options or COOP
+curl -sI https://lab.ivankristianto.com/experiments/font-split/     # 200, frame-ancestors, X-Robots-Tag, no X-Frame-Options or COOP
 curl -sI https://lab.ivankristianto.com/shared/lab.css  # 200, same security headers, short max-age
-curl -sI https://lab.ivankristianto.com/font-split      # 301 to /font-split/, relative Location
+curl -sI https://lab.ivankristianto.com/experiments/font-split      # 301 to /experiments/font-split/, relative Location
 curl -sI https://lab.ivankristianto.com/README.md       # 404
 curl -sI https://lab.ivankristianto.com/docs/tool-guidelines.md  # 404
 curl -sI https://lab.ivankristianto.com/                # 302 to www.ivankristianto.com/lab/
+curl -sI https://lab.ivankristianto.com/experiments/    # same 302
 ```
 
 The ik2 dev container may predate the `IK2_LAB_ORIGIN` line in ik2's `docker-compose.yml`. If `docker exec <app container> printenv IK2_LAB_ORIGIN` prints nothing, the entry page renders no frame; recreate the app container first.
 
-Locally, run the image on port 8787 with `FRAME_ANCESTORS=http://localhost:8080` and open `http://localhost:8080/lab/font-split-inspector/` on the ik2 dev stack: the bar should go from `loading` to the tool, and the frame should follow the tool's height. If the local entry is gone, create one with the tool URL `http://localhost:8787/font-split/`.
+Locally, run the image on port 8787 with `FRAME_ANCESTORS=http://localhost:8080` and open `http://localhost:8080/lab/font-split-inspector/` on the ik2 dev stack: the bar should go from `loading` to the tool, and the frame should follow the tool's height. If the local entry is gone, create one with the tool URL `http://localhost:8787/experiments/font-split/`. An entry made before 2026-11-18 points at `/font-split/` and needs that update.
 
 ### 6. Publish the first entry on prod (content work, with Ivan)
 
 Not a change in this repo. In wp-admin on the main site, a lab entry needs:
 
 - **Fields:** title, slug `font-split-inspector`, an excerpt (the index blurb), and the write-up in the body.
-- **Tool and source:** in the "Lab tool" panel, the tool URL `https://lab.ivankristianto.com/font-split/` and the source `https://github.com/ivankristianto/ik2-lab/tree/main/experiments/font-split`.
+- **Tool and source:** in the "Lab tool" panel, the tool URL `https://lab.ivankristianto.com/experiments/font-split/` and the source `https://github.com/ivankristianto/ik2-lab/tree/main/experiments/font-split`.
 - **Heights:** both starting heights, measured from the hosted tool at desktop and phone widths. On the dev stack the content measured 464px at 1440 wide and 938px at 390 wide (2026-11-18), so the 900px narrow start was short.
 - **Specimen:** up to four lines of real output for the index row, for example the sample sentence, then one line per font file with its character count.
 
