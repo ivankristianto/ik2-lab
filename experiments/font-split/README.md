@@ -8,14 +8,14 @@ Status: demo. It is the reference tool for this repo, so new tools start as a co
 
 ## Run it
 
-No install, no build. It is one `index.html` that links `../shared/tokens.css` and `../shared/lab.css`, so serve from the repo root, not from this folder:
+No install, no build. It is one `index.html` that links `/shared/tokens.css` and `/shared/lab.css`, so serve from the repo root, not from this folder:
 
 ```bash
-cd ..
+cd ../..
 python3 -m http.server 8787
 ```
 
-Then open `http://localhost:8787/font-split/`.
+Then open `http://localhost:8787/experiments/font-split/`. Production serves it at `https://lab.ivankristianto.com/font-split/`; to get that path locally, run the image as the root README shows.
 
 ## Where the data goes
 
