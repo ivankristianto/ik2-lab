@@ -4,7 +4,7 @@ Small tools and experiments for [ivankristianto.com/lab](https://www.ivankristia
 
 Each tool answers one question, runs in the browser, and needs no account. It is served from `lab.ivankristianto.com/<slug>/` and shown on its entry page on the main site inside a sandboxed frame. The pages around the tools live in [ivankristianto/ik2](https://github.com/ivankristianto/ik2).
 
-This repo is a starting point. Nothing is deployed from it yet.
+The static tools ship as one nginx image, built to run on Dokploy as `lab.ivankristianto.com`. It is not deployed yet.
 
 ## Tools
 
@@ -24,6 +24,8 @@ This repo is a starting point. Nothing is deployed from it yet.
 | `PRODUCT.md` | Who the tools are for and what they must do. |
 | `CLAUDE.md` | Instructions for coding agents. |
 | `scripts/sync-brand.sh` | Refreshes the three copies from the main repo. |
+| `Dockerfile` | The nginx image for the static tools. Its `COPY` lines list every public file. |
+| `docker/nginx/` | The nginx config and its response headers. |
 
 ## Tools are self-contained
 
@@ -36,6 +38,15 @@ python3 -m http.server 8787
 ```
 
 The ik2 dev stack frames tools from `http://localhost:8787`.
+
+## Running the image
+
+The image serves only the files its `Dockerfile` copies, with the production headers. `FRAME_ANCESTORS` defaults to the main site; point it at the dev stack to frame tools locally:
+
+```bash
+docker build -t ik2-lab .
+docker run --rm -p 8787:80 -e FRAME_ANCESTORS=http://localhost:8080 ik2-lab
+```
 
 ## Brand
 
@@ -64,8 +75,10 @@ Start from `font-split/` and rewrite its `README.md` for the new tool. Then add 
 - show a useful result on load;
 - say whether the input stays in the browser.
 
+Then add a `COPY` line to the `Dockerfile` for each file a visitor loads. Anything left out is a 404 in production.
+
 The full rules are in [`docs/tool-guidelines.md`](docs/tool-guidelines.md).
 
 ## Not here yet
 
-Hosting, response headers, the Worker for server-side fetches, and a release process.
+The Worker for server-side fetches, and a release process.

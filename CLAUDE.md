@@ -19,6 +19,8 @@ Read `PRODUCT.md` for who the tools are for and `docs/tool-guidelines.md` before
 | `docs/tool-guidelines.md` | Copy of the brand rules for tools. Synced, never edited. |
 | `shared/BRAND_VERSION` | The ik2 ref and commit the three copies came from. |
 | `scripts/sync-brand.sh` | Refreshes the copies. |
+| `Dockerfile` | The nginx image that serves the static tools. Its `COPY` lines are the whitelist of public files. |
+| `docker/nginx/default.conf.template` | The nginx config, filled from env vars at start. Holds every response header. |
 
 ## Commands
 
@@ -27,9 +29,12 @@ python3 -m http.server 8787        # serve the repo; the ik2 dev stack frames to
 scripts/sync-brand.sh              # copy the brand files from ../ik2 at its newest release tag
 scripts/sync-brand.sh <ref>        # or from a specific tag or branch
 scripts/sync-brand.sh --check      # fail if a copy differs from ik2 at the recorded commit
+
+docker build -t ik2-lab .          # the image Dokploy runs
+docker run --rm -p 8787:80 -e FRAME_ANCESTORS=http://localhost:8080 ik2-lab   # same port, with the prod headers
 ```
 
-`sync-brand.sh` reads a sibling checkout at `../ik2`. Set `IK2_DIR` if it is somewhere else. The repo root has no build step, no package manager and no test runner.
+`sync-brand.sh` reads a sibling checkout at `../ik2`. Set `IK2_DIR` if it is somewhere else. The repo root has no package manager and no test runner. Its only build is the `Dockerfile`.
 
 ## Repo versus tool
 
@@ -38,7 +43,7 @@ The repo will hold tools of any kind: a static page, a Worker, something with na
 - The root `README.md` is about the repo: what it is, the tools table, the layout, the brand, how to add a tool. It never holds one tool's setup or usage.
 - Each tool's `<slug>/README.md` holds everything about that tool: what it does, how to run it, how to install and build it, what runs where, and anything that only works locally.
 - A tool's dependencies, lockfile, build config, env example and scripts stay inside its folder (`<slug>/package.json`, `<slug>/wrangler.toml`, `<slug>/.env.example`). Install and build from that folder. Never add a `package.json` or other manifest at the root.
-- Only `shared/` and `scripts/sync-brand.sh` are shared. If two tools need the same code, ask before adding it to `shared/`.
+- Only `shared/`, `scripts/sync-brand.sh`, the `Dockerfile` and `docker/nginx/` are shared. If two tools need the same code, ask before adding it to `shared/`.
 
 ## Brand
 
@@ -79,7 +84,8 @@ Rules that constrain every change:
 2. Use the classes in `shared/lab.css`. Check the result against the "Checking a tool" list in `docs/tool-guidelines.md`.
 3. Rewrite `<slug>/README.md` for the new tool, with its own setup and run steps. Keep any install or build inside the folder.
 4. Add one row for the tool to the table in the root `README.md`. Nothing else about the tool goes there.
-5. The entry page is content in WordPress on the main site, not a file here.
+5. Add a `COPY` line to the `Dockerfile` for each file a visitor loads. Never copy the tool's `README.md`, manifest, lockfile or env file. A file left out is a 404 in production.
+6. The entry page is content in WordPress on the main site, not a file here.
 
 ## Voice
 
@@ -93,6 +99,15 @@ First person, working engineer, plain. Labels are lowercase (`sample text`, `res
 - Atomic commits in Conventional Commits form: `feat(font-split): ...`, `fix(shared): ...`, `docs: ...`. Stage files by name, never `git add -A`.
 - This repo is public. Never put a client name or a private repo link in a commit, branch or file.
 
+## Hosting
+
+The static tools ship as one nginx image for Dokploy, the server that runs the main site, where it runs as its own application at `lab.ivankristianto.com`. It is not deployed yet.
+
+- Response headers live in `docker/nginx/default.conf.template`, all at server level. An `add_header` inside a `location` drops every server-level header, so never add one there. Use `expires` for cache rules.
+- `FRAME_ANCESTORS` sets `Content-Security-Policy: frame-ancestors`. It defaults to `https://www.ivankristianto.com`; pass `http://localhost:8080` for the dev stack.
+- Never send `X-Frame-Options`, `Cross-Origin-Opener-Policy` or `Cross-Origin-Embedder-Policy`: each one stops the site framing a tool. HSTS comes from Cloudflare, not nginx.
+- After changing either file, run the image and check `curl -sI` on an HTML page, a CSS file and a 404.
+
 ## Not decided yet
 
-Hosting, response headers (`frame-ancestors https://www.ivankristianto.com`, `X-Robots-Tag: noindex, indexifembedded`), the Worker for server-side fetches, and releases. Don't add any of them without asking.
+The Worker for server-side fetches. Don't add it without asking.
