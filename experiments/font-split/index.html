@@ -55,7 +55,7 @@
         <span class="lab-hint" id="face-hint">Your rules describe more than one family, weight or style. The browser picks files for each face on its own, so choose the one your text is set in.</span>
       </div>
     </div>
-    <p class="lab-hint">Hover a character to see which file draws it. A dotted underline means no rule covers it, so the browser falls back to the next font in the stack. The table lists the characters each file draws.</p>
+    <p class="lab-hint">Hover a character to see which file draws it. A dotted underline means no rule covers it, so the browser falls back to the next font in the stack. The table lists the characters each file draws; hover a file name for its full URL.</p>
     <p class="lab-specimen" id="specimen"></p>
     <table class="lab-table">
       <thead><tr><th>file</th><th>characters</th><th class="num">count</th></tr></thead>
@@ -100,6 +100,9 @@ function pickFace(all) {
   return all.filter((f) => f.face === select.value);
 }
 
+// Hosted fonts have long URLs that differ only at the end, so show the file name and keep the URL for hover.
+const fileName = (url) => url.split(/[?#]/)[0].split('/').filter(Boolean).pop() || url;
+
 function inspect() {
   const faces = pickFace(parseFaces($('css').value));
   const hits = new Map();
@@ -113,17 +116,19 @@ function inspect() {
     if (ch.trim()) hits.set(file, [...(hits.get(file) || []), ch]);
     const mark = document.createElement('mark');
     mark.textContent = ch;
-    mark.title = file;
+    mark.title = face ? fileName(file) : file;
     if (!face) mark.dataset.hit = 'none';
     specimen.append(mark);
   }
   $('rows').textContent = '';
   for (const [file, chars] of hits) {
     const tr = document.createElement('tr');
-    for (const [text, cls] of [[file], [[...new Set(chars)].join(' ')], [chars.length, 'num']]) {
+    const name = file === 'fallback font' ? file : fileName(file);
+    for (const [text, cls, title] of [[name, '', name === file ? '' : file], [[...new Set(chars)].join(' ')], [chars.length, 'num']]) {
       const td = document.createElement('td');
       td.textContent = text;
       if (cls) td.className = cls;
+      if (title) td.title = title;
       tr.append(td);
     }
     $('rows').append(tr);
