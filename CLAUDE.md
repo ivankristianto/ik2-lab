@@ -66,6 +66,17 @@ Rules that constrain every change:
 - **Focus ring** is 2px Bookcloth with a 3px offset on every control.
 - **Motion** is `200ms ease` on colour, background and border only.
 
+## Write for the person using the tool
+
+Before building or changing a tool, picture someone who lands on it once, from a search or a shared link, with their own input in hand and no idea how it works. Every decision serves that person.
+
+- Tell them what to do. Each field has a `.lab-hint` under it that says what to paste or type and where to find it ("Paste the @font-face rules from your stylesheet"). A label alone is not enough.
+- Tell them how to read the result. Put one hint under the result head that explains what the marks, colours or numbers mean.
+- Mention any shortcut or hidden behaviour where it applies (Ctrl+Enter to run, hover for details), and give a way to get the same information without it, such as a table next to a hover.
+- Make the default input a realistic example, so the result on load already shows what the tool is for.
+- When something fails, say what went wrong and what to change, in their terms. Never show a raw parser message.
+- Read the tool as a first-time visitor before calling it done. If you had to explain something in the write-up that the tool could have said itself, put it in the tool.
+
 ## What every tool must do
 
 1. Set `data-embedded` on `<html>` before first paint when `window.top !== window`. Framed, it sits on Surface with no header. On its own, it sits on Paper with a `.lab-standalone` header linking back to its entry.
@@ -77,8 +88,9 @@ Rules that constrain every change:
 4. Show a useful result on load.
 5. Say under the input whether it stays in the browser.
 6. Work with the keyboard alone, with controls 44px tall or more and 16px text on phones.
+7. Explain itself: a hint under every field and under the result, as in "Write for the person using the tool" above.
 
-`experiments/font-split/index.html` is the reference for all six.
+`experiments/font-split/index.html` is the reference for all seven.
 
 ## Adding a tool
 
