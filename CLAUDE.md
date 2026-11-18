@@ -21,6 +21,7 @@ Read `PRODUCT.md` for who the tools are for and `docs/tool-guidelines.md` before
 | `scripts/sync-brand.sh` | Refreshes the copies. |
 | `Dockerfile` | The nginx image that serves the static tools. Its `COPY` lines are the whitelist of public files. |
 | `docker/nginx/default.conf.template` | The nginx config, filled from env vars at start. Holds every response header. |
+| `scripts/release.sh` | Tags `main` as the next `vX.Y.Z`. The tag runs `.github/workflows/build.yml`, which pushes the image and redeploys. |
 
 ## Commands
 
@@ -32,6 +33,7 @@ scripts/sync-brand.sh --check      # fail if a copy differs from ik2 at the reco
 
 docker build -t ik2-lab .          # the image Dokploy runs
 docker run --rm -p 8787:80 -e FRAME_ANCESTORS=http://localhost:8080 ik2-lab   # same port, with the prod headers
+scripts/release.sh patch --dry-run # release; only when Ivan asks
 ```
 
 `sync-brand.sh` reads a sibling checkout at `../ik2`. Set `IK2_DIR` if it is somewhere else. The repo root has no package manager and no test runner. Its only build is the `Dockerfile`.
@@ -43,7 +45,7 @@ The repo will hold tools of any kind: a static page, a Worker, something with na
 - The root `README.md` is about the repo: what it is, the tools table, the layout, the brand, how to add a tool. It never holds one tool's setup or usage.
 - Each tool's `<slug>/README.md` holds everything about that tool: what it does, how to run it, how to install and build it, what runs where, and anything that only works locally.
 - A tool's dependencies, lockfile, build config, env example and scripts stay inside its folder (`<slug>/package.json`, `<slug>/wrangler.toml`, `<slug>/.env.example`). Install and build from that folder. Never add a `package.json` or other manifest at the root.
-- Only `shared/`, `scripts/sync-brand.sh`, the `Dockerfile` and `docker/nginx/` are shared. If two tools need the same code, ask before adding it to `shared/`.
+- Only `shared/`, `scripts/`, the `Dockerfile`, `docker/nginx/` and the workflows are shared. If two tools need the same code, ask before adding it to `shared/`.
 
 ## Brand
 
@@ -107,6 +109,7 @@ The static tools ship as one nginx image for Dokploy, the server that runs the m
 - `FRAME_ANCESTORS` sets `Content-Security-Policy: frame-ancestors`. It defaults to `https://www.ivankristianto.com`; pass `http://localhost:8080` for the dev stack.
 - Never send `X-Frame-Options`, `Cross-Origin-Opener-Policy` or `Cross-Origin-Embedder-Policy`: each one stops the site framing a tool. HSTS comes from Cloudflare, not nginx.
 - After changing either file, run the image and check `curl -sI` on an HTML page, a CSS file and a 404.
+- Release only when Ivan asks, with `scripts/release.sh`. A tag redeploys production. If Cloudflare proxies `lab`, purge its cache after a release that changes `shared/`.
 
 ## Not decided yet
 

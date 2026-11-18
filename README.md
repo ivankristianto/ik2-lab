@@ -26,6 +26,7 @@ The static tools ship as one nginx image, built to run on Dokploy as `lab.ivankr
 | `scripts/sync-brand.sh` | Refreshes the three copies from the main repo. |
 | `Dockerfile` | The nginx image for the static tools. Its `COPY` lines list every public file. |
 | `docker/nginx/` | The nginx config and its response headers. |
+| `scripts/release.sh` | Tags a release, which builds the image and redeploys it. |
 
 ## Tools are self-contained
 
@@ -47,6 +48,17 @@ The image serves only the files its `Dockerfile` copies, with the production hea
 docker build -t ik2-lab .
 docker run --rm -p 8787:80 -e FRAME_ANCESTORS=http://localhost:8080 ik2-lab
 ```
+
+## Releasing
+
+A `v*` tag builds the image, pushes it to `ghcr.io/ivankristianto/ik2-lab` and calls the Dokploy webhook (`.github/workflows/build.yml`). Cut one from a clean, pushed `main`:
+
+```bash
+scripts/release.sh patch --dry-run   # check first
+scripts/release.sh patch             # or minor, major, X.Y.Z
+```
+
+The script needs `gh` signed in. It refuses when the `brand` check failed on that commit. A manual run of the workflow builds `<branch>` and `sha-*` images and does not deploy.
 
 ## Brand
 
@@ -81,4 +93,4 @@ The full rules are in [`docs/tool-guidelines.md`](docs/tool-guidelines.md).
 
 ## Not here yet
 
-The Worker for server-side fetches, and a release process.
+The Worker for server-side fetches.
