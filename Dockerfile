@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
-FROM nginx:1.27-alpine
+# 1.30.7 fixes the nginx2root CVEs (CVE-2026-123007 and others); keep at or above it.
+FROM nginx:1.30.7-alpine
 
 # Production default, so the CSP header never ships with an unfilled ${FRAME_ANCESTORS}.
 # A local run against the ik2 dev stack passes -e FRAME_ANCESTORS=http://localhost:8080.
