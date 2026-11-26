@@ -1,4 +1,12 @@
 /* A2UI playground: the source switch, the key notice, and how the renderer draws basic-catalog components. Tokens only. */
+
+/* .lab-stack sets display: grid, which would otherwise beat the hidden attribute. */
+.lab-stack[hidden],
+.lab-field[hidden],
+.lab-button[hidden] {
+  display: none;
+}
+
 .pg-source {
   display: grid;
   gap: var(--wp--preset--spacing--2);
@@ -33,12 +41,16 @@
 .a2ui-column {
   display: flex;
   flex-direction: column;
+  justify-content: var(--a2ui-justify, flex-start);
+  align-items: var(--a2ui-align, stretch);
   gap: var(--wp--preset--spacing--4);
 }
 
 .a2ui-row {
   display: flex;
   flex-wrap: wrap;
+  justify-content: var(--a2ui-justify, flex-start);
+  align-items: var(--a2ui-align, stretch);
   gap: var(--wp--preset--spacing--4);
 }
 
@@ -222,12 +234,14 @@
 
 .pg-problems {
   display: grid;
-  gap: var(--wp--preset--spacing--2);
+  gap: var(--wp--preset--spacing--3);
+  font-size: var(--wp--preset--font-size--x-small);
   margin: var(--wp--preset--spacing--3) 0 0;
   padding-left: var(--wp--preset--spacing--5);
 }
 
 .pg-problems code {
+  display: block;
   color: var(--wp--preset--color--graphite);
   overflow-wrap: anywhere;
 }
@@ -237,6 +251,11 @@
   /* Side-by-side fields get too narrow on a phone, so a Row stacks there. */
   .a2ui-row {
     flex-direction: column;
-    align-items: stretch;
+    align-items: flex-start;
+  }
+
+  .a2ui-row > .lab-field,
+  .a2ui-row > .a2ui-column {
+    align-self: stretch;
   }
 }

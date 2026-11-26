@@ -40,7 +40,7 @@ function showProblems(errors, lead) {
     const list = line('ul', 'pg-problems', '');
     for (const err of errors.slice(0, 20)) {
       const li = document.createElement('li');
-      if (err.path) li.append(line('code', '', err.path), ' ');
+      if (err.path) li.append(line('code', '', err.path));
       li.append(err.message);
       list.append(li);
     }

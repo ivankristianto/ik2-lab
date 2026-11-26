@@ -94,15 +94,17 @@ export function renderSurface(surface, { onAction = () => {} } = {}) {
     },
     Row(comp, ctx, opts, stack) {
       const node = el('div', { class: 'a2ui-row' });
-      node.style.justifyContent = JUSTIFY[comp.justify] || '';
-      node.style.alignItems = ALIGN[comp.align] || '';
+      // Custom properties, not inline justify/align, so the phone layout can still override them.
+      if (comp.justify) node.style.setProperty('--a2ui-justify', JUSTIFY[comp.justify]);
+      if (comp.align) node.style.setProperty('--a2ui-align', ALIGN[comp.align]);
       node.append(...children(comp, ctx, stack, (c) => c).flat());
       return node;
     },
     Column(comp, ctx, opts, stack) {
       const node = el('div', { class: 'a2ui-column' });
-      node.style.justifyContent = JUSTIFY[comp.justify] || '';
-      node.style.alignItems = ALIGN[comp.align] || '';
+      // Custom properties, not inline justify/align, so the phone layout can still override them.
+      if (comp.justify) node.style.setProperty('--a2ui-justify', JUSTIFY[comp.justify]);
+      if (comp.align) node.style.setProperty('--a2ui-align', ALIGN[comp.align]);
       node.append(...children(comp, ctx, stack, (c) => c).flat());
       return node;
     },
