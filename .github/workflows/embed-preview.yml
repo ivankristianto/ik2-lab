@@ -1,0 +1,25 @@
+name: embed-preview
+
+on:
+  pull_request:
+    paths: ['experiments/embed-preview/**', '.github/workflows/embed-preview.yml']
+  push:
+    branches: [main]
+    paths: ['experiments/embed-preview/**', '.github/workflows/embed-preview.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: parser and lookup tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - run: node --test test/*.test.js
+        working-directory: experiments/embed-preview
