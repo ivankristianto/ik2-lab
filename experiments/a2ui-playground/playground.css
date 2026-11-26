@@ -1,5 +1,10 @@
 /* A2UI playground: the source switch, the key notice, and how the renderer draws basic-catalog components. Tokens only. */
 
+/* The input column stays packed at the top when the result column is taller. */
+.lab-split > .lab-stack {
+  align-content: start;
+}
+
 /* .lab-stack sets display: grid, which would otherwise beat the hidden attribute. */
 .lab-stack[hidden],
 .lab-field[hidden],
@@ -243,7 +248,7 @@
 .pg-problems code {
   display: block;
   color: var(--wp--preset--color--graphite);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 @media (max-width: 40em) {

@@ -2,7 +2,7 @@
 import { hasUnsafeSegment, setPath } from './evaluate.js';
 
 export const BASIC_CATALOG = 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json';
-export const LIMITS = { bytes: 200_000, components: 500, depth: 32, items: 200 };
+export const LIMITS = { bytes: 200_000, components: 500, depth: 32, items: 200, drawn: 2000 };
 
 const JUSTIFY = ['start', 'center', 'end', 'spaceBetween', 'spaceAround', 'spaceEvenly', 'stretch'];
 const ALIGN = ['start', 'center', 'end', 'stretch'];
@@ -496,6 +496,12 @@ export function load(messages, surfaces = new Map()) {
 export function read(text) {
   const parsed = parseMessages(text);
   if (parsed.errors) return { surfaces: new Map(), errors: parsed.errors };
-  return load(parsed.messages);
+  try {
+    return load(parsed.messages);
+  } catch (err) {
+    // JSON nested thousands of levels deep fits in 200 KB and can overflow the stack.
+    if (err instanceof RangeError) return { surfaces: new Map(), errors: [{ path: '', message: 'The messages are nested too deeply to read. Flatten the data model or the function calls.' }] };
+    throw err;
+  }
 }
 

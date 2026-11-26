@@ -111,6 +111,22 @@ test('component props: children, tabs, options, actions, accessibility, checks',
   assert.match(messages(load([create(root([{ id: 'x', component: 'CheckBox', label: 'a', value: true, '@checks': [{}] }]))])), /needs a condition/);
 });
 
+test('component extras: weight, @metadata, the live enum, sendDataModel', () => {
+  assert.match(messages(load([create(root([{ id: 'x', component: 'Divider', weight: 'big' }]))])), /weight has to be a number/);
+  assert.match(messages(load([create(root([{ id: 'x', component: 'Divider', '@metadata': 'x' }]))])), /@metadata has to be an object/);
+  assert.match(messages(load([create(root([{ id: 'x', component: 'Divider', '@accessibility': { live: 'loud' } }]))])), /one of off, polite, assertive/);
+  assert.match(messages(load([create(root(), { sendDataModel: 'yes' })])), /sendDataModel is true or false/);
+  assert.deepEqual(load([create(root([{ id: 'x', component: 'Divider', weight: 1, '@metadata': {}, '@accessibility': { label: 'Rule', live: 'polite' } }]), { sendDataModel: true })]).errors, []);
+});
+
+test('input nested too deeply gets a sentence instead of a crash', () => {
+  const deep = '[' + JSON.stringify(create(root())).replace('"components"', `"dataModel": ${'{"a":'.repeat(9000)}1${'}'.repeat(9000)}, "components"`) + ']';
+  assert.match(messages(read(deep)), /nested too deeply/);
+  const calls = '{"@call":"not","args":{"value":'.repeat(3000) + 'true' + '}}'.repeat(3000);
+  const nested = JSON.stringify([create(root([{ id: 'x', component: 'CheckBox', label: 'a', value: true }]))]).replace('"value":true', `"value":${calls}`);
+  assert.match(messages(read(nested)), /nested too deeply/);
+});
+
 test('bindings and functions: shape, unsafe paths, left-out and unknown functions, args', () => {
   const field = (value) => [create(root([{ id: 'x', component: 'TextField', label: 'a', value }]))];
   assert.match(messages(load(field({ '@path': '/a', extra: 1 }))), /nothing else/);

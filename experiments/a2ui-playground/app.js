@@ -22,6 +22,16 @@ function line(tag, cls, text) {
   return node;
 }
 
+// A break opportunity after each slash, so a long pointer wraps between segments on a phone.
+function pathCode(path) {
+  const code = document.createElement('code');
+  path.split('/').forEach((seg, i) => {
+    if (i) code.append('/', document.createElement('wbr'));
+    code.append(seg);
+  });
+  return code;
+}
+
 function setNote(text, status) {
   const note = $('note');
   note.replaceChildren(status ? line('span', `lab-status lab-status--${status}`, text) : text);
@@ -40,7 +50,7 @@ function showProblems(errors, lead) {
     const list = line('ul', 'pg-problems', '');
     for (const err of errors.slice(0, 20)) {
       const li = document.createElement('li');
-      if (err.path) li.append(line('code', '', err.path));
+      if (err.path) li.append(pathCode(err.path));
       li.append(err.message);
       list.append(li);
     }
@@ -63,7 +73,15 @@ function drawSurfaces() {
 
 function render() {
   $('action-wrap').hidden = true;
-  const result = read(field.value);
+  try {
+    show(read(field.value));
+  } catch {
+    surfaces = new Map();
+    showProblems([{ path: '', message: 'This page hit an error while drawing these messages. Simplify them, or reload and try a preset.' }]);
+  }
+}
+
+function show(result) {
   field.setAttribute('aria-invalid', result.errors.length ? 'true' : 'false');
   if (result.errors.length) {
     surfaces = new Map();
@@ -82,9 +100,13 @@ function onAction(message) {
   $('reply-wrap').hidden = !reply;
   if (!reply) return;
   $('reply').textContent = toJSON(reply);
-  const { errors } = load(structuredClone(reply), surfaces);
-  if (errors.length) showProblems(errors, 'The scripted reply didn\'t apply.');
-  else drawSurfaces();
+  try {
+    const { errors } = load(structuredClone(reply), surfaces);
+    if (errors.length) showProblems(errors, 'The scripted reply didn\'t apply.');
+    else drawSurfaces();
+  } catch {
+    showProblems([{ path: '', message: 'The scripted reply didn\'t apply. Reload and try the preset again.' }]);
+  }
 }
 
 function loadPreset() {
@@ -135,7 +157,8 @@ async function runLive() {
       showProblems([{ path: '', message: `${p.label} stopped at its length limit, so the reply is cut off. Ask for a smaller interface and try again.` }], 'The reply is incomplete.');
     }
     status.className = `lab-status lab-status--${$('problems').childElementCount ? 'warn' : 'ok'}`;
-    status.textContent = `reply in ${seconds} s`;
+    const count = [...surfaces.values()].reduce((n, s) => n + s.components.size, 0);
+    status.textContent = surfaces.size ? `reply in ${seconds} s, ${count} components` : `reply in ${seconds} s`;
   } catch (err) {
     const message = err instanceof ProviderError ? err.message : 'Something went wrong in this page while sending the request. Reload and try again.';
     showProblems([{ path: '', message }], 'The request failed.');

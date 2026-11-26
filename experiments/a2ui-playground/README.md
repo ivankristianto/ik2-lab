@@ -25,7 +25,7 @@ The tests use Node's built-in runner (Node 22 or later) and need no install:
 npm test          # from this folder; or: node --test tests/*.test.js
 ```
 
-`tests/protocol.test.js` covers every validator rule and every preset. `tests/providers.test.js` checks each provider's request and reply shape and error sentences against a mocked `fetch`. The renderer is checked in a browser.
+`tests/protocol.test.js` covers the validator's rules, each preset, and input nested deep enough to overflow the stack. `tests/providers.test.js` checks each provider's request and reply shape and error sentences against a mocked `fetch`. The renderer is checked in a browser.
 
 ## Files
 
@@ -49,7 +49,7 @@ The A2UI v1.0 basic catalog, minus five components:
 - Functions: required, email, length, numeric, and, or, not, formatString (data paths only), formatNumber, formatCurrency, and `@index` inside templates. regex, openUrl, formatDate and pluralize are reported as unsupported.
 - Messages: createSurface, updateComponents, updateDataModel, deleteSurface. callRendererFunction and agentFunctionResponse need a live agent session, so they are reported.
 
-Responses are untrusted. The validator checks the envelope, every component prop and enum, ids, references, cycles, depth (32), size (500 components, 200 template items, 200 KB) and data paths (`__proto__`, `constructor` and `prototype` are refused). Nothing is drawn while any problem stands, and response text reaches the page only through `textContent` and attributes.
+Responses are untrusted. The validator checks the envelope, every component prop and enum, ids, references, cycles, depth (32), size (500 components, 200 template items, 200 KB) and data paths (`__proto__`, `constructor` and `prototype` are refused). Nothing is drawn while any problem stands, and response text reaches the page only through `textContent` and attributes. Drawing stops after 2,000 components, since nested list templates multiply.
 
 ## Where the data goes
 
@@ -62,6 +62,8 @@ All three providers advise against using API keys in a browser, so the page says
 ## Models
 
 Defaults, checked against each provider's models page on 2026-11-26: `claude-haiku-5-5`, `gpt-6-luna`, `gemini-3.5-flash-lite`. The model field takes any ID the key can use.
+
+Request shapes were checked against each provider's docs, and Gemini's body against its schema check (it rejects unknown fields before it checks the key). Anthropic uses `anthropic-version: 2023-06-01`, which its versioning page still lists; the current one is `2026-10-21`. No provider has been called with a real key yet.
 
 ## Local and production
 

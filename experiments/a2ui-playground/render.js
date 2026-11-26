@@ -28,6 +28,7 @@ export function renderSurface(surface, { onAction = () => {} } = {}) {
   const scope = (base, index) => ({ get model() { return surface.dataModel; }, base, index });
   const watch = (fn) => { updaters.push(fn); fn(); };
   let templateNote = '';
+  let drawn = 0;
 
   const write = (binding, ctx, value) => {
     if (binding && typeof binding === 'object' && typeof binding['@path'] === 'string') {
@@ -40,9 +41,9 @@ export function renderSurface(surface, { onAction = () => {} } = {}) {
     .filter((rule) => !truthy(evaluate(rule.condition, ctx)))
     .map((rule) => rule.message || 'This value isn\'t valid.');
 
-  function accessibility(node, comp, ctx, describedBy = []) {
+  function accessibility(node, comp, ctx, nodes) {
     const a11y = comp['@accessibility'];
-    if (!a11y) return node;
+    if (!a11y) return;
     watch(() => {
       if ('label' in a11y) node.setAttribute('aria-label', toText(evaluate(a11y.label, ctx)));
       if ('hidden' in a11y) node.toggleAttribute('aria-hidden', truthy(evaluate(a11y.hidden, ctx)));
@@ -51,10 +52,9 @@ export function renderSurface(surface, { onAction = () => {} } = {}) {
     if ('description' in a11y) {
       const desc = el('span', { id: nextId('desc'), hidden: true });
       watch(() => { desc.textContent = toText(evaluate(a11y.description, ctx)); });
-      node.setAttribute('aria-describedby', [...describedBy, desc.id].join(' '));
-      return [node, desc];
+      node.setAttribute('aria-describedby', [node.getAttribute('aria-describedby'), desc.id].filter(Boolean).join(' '));
+      nodes.push(desc);
     }
-    return node;
   }
 
   // Field check messages appear once the visitor has touched the field.
@@ -272,10 +272,18 @@ export function renderSurface(surface, { onAction = () => {} } = {}) {
     const comp = surface.components.get(id);
     // The validator refuses cycles and deep trees; this guard keeps a bad state from recursing anyway.
     if (!comp || stack.includes(id) || stack.length > LIMITS.depth) return [];
+    // Nested templates multiply: three lists of 200 would be 8 million nodes, so drawing stops at a budget.
+    if (++drawn > LIMITS.drawn) {
+      templateNote = `Stopped after ${LIMITS.drawn} components; nested lists make more than this playground draws.`;
+      return [];
+    }
     const node = RENDER[comp.component](comp, ctx, opts, [...stack, id]);
     const nodes = [node].flat();
     if (typeof comp.weight === 'number') nodes[0].style.flexGrow = String(comp.weight);
-    return [accessibility(nodes[0], comp, ctx)].flat().concat(nodes.slice(1));
+    // Field components draw a wrapper; their accessible name belongs on the control inside it.
+    const target = ['TextField', 'Slider', 'DateTimeInput', 'CheckBox'].includes(comp.component) ? nodes[0].querySelector('input, textarea') || nodes[0] : nodes[0];
+    accessibility(target, comp, ctx, nodes);
+    return nodes;
   }
 
   const element = el('div', { class: 'a2ui-surface', 'data-surface': surface.id }, ...draw('root', scope('', undefined), []));
