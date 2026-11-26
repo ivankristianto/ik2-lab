@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseHtml } from '../parse.js';
-import { buildPreview } from '../fields.js';
+import { buildPreview, parseHtml, safeUrl } from '../parse.js';
 
 const get = (tags, name) => tags.find(([n]) => n === name)?.[1];
 
@@ -81,4 +80,12 @@ test('control characters are stripped and long values cut', () => {
   const tags = parseHtml(`<meta property="og:title" content="a\u0000b\u202ec">${`<meta name="description" content="${'x'.repeat(5000)}">`}`);
   assert.equal(get(tags, 'og:title'), 'a b c');
   assert.ok(get(tags, 'description').length <= 1000);
+});
+
+test('safeUrl keeps http and https only', () => {
+  assert.equal(safeUrl('https://example.com/a'), 'https://example.com/a');
+  assert.equal(safeUrl('/a', 'https://example.com/b'), 'https://example.com/a');
+  for (const bad of ['javascript:alert(1)', ' JavaScript:alert(1)', 'data:text/html,x', 'vbscript:x', 'file:///etc/passwd', '', null, 42]) {
+    assert.equal(safeUrl(bad, 'https://example.com/'), null, String(bad));
+  }
 });

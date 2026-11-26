@@ -1,7 +1,6 @@
 // Draws the cards and the detail tables. Page text only ever reaches the DOM through textContent,
 // and an image only through an http(s) src with no referrer.
-import { buildPreview, summarize } from './fields.js';
-import { safeUrl } from './url.js';
+import { buildPreview, safeUrl, summarize } from './parse.js';
 
 function el(tag, className, text) {
   const node = document.createElement(tag);

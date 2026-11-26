@@ -1,8 +1,34 @@
 // Wires the form, the paste section and the result together, and reports height to the entry page.
-import { lookupHtml, lookupUrl } from './lookup.js';
-import { messageFor, PASTE_HELPS } from './messages.js';
+import { lookupHtml, lookupUrl, messageFor, PASTE_HELPS } from './lookup.js';
 import { clearResult, renderResult } from './render.js';
-import { SAMPLE } from './sample.js';
+
+// The result shown on first paint: my font split entry's head tags as read on 2026-11-26.
+// Shipping it saves a Microlink lookup on every page view.
+const ENTRY = 'https://www.ivankristianto.com/lab/font-split-inspector/';
+const TITLE = 'Font split inspector - Ivan Kristianto';
+const DESCRIPTION = 'Paste @font-face rules and sample text, see which font file draws each character.';
+
+const SAMPLE = {
+  source: 'saved sample',
+  pageUrl: ENTRY,
+  oembed: null,
+  oembedNote: 'not declared',
+  tags: [
+    ['title', TITLE],
+    ['og:type', 'article'],
+    ['og:title', TITLE],
+    ['og:description', DESCRIPTION],
+    ['og:url', ENTRY],
+    ['og:site_name', 'Ivan Kristianto'],
+    ['og:image', 'https://www.ivankristianto.com/wp-content/themes/ik2/assets/images/social-card.png'],
+    ['og:image:width', '2400'],
+    ['og:image:height', '1260'],
+    ['twitter:card', 'summary_large_image'],
+    ['twitter:site', '@ivankrisdotcom'],
+    ['link icon', 'https://www.ivankristianto.com/wp-content/themes/ik2/assets/favicon/favicon.svg'],
+    ['link canonical', ENTRY],
+  ],
+};
 
 const $ = (id) => document.getElementById(id);
 const dom = Object.fromEntries([...document.querySelectorAll('[data-ref]')].map((n) => [n.dataset.ref, n]));

@@ -1,7 +1,58 @@
-// Reads meta, link and title tags from pasted HTML as plain text. Nothing is parsed into a DOM
-// or run, so a pasted script stays a string.
-import { clean, LIMITS } from './text.js';
-import { URL_TAGS } from './tags.js';
+// Reads pasted HTML and decides what each card shows. Everything here is pure text work: nothing is
+// parsed into a DOM or run, and every string and URL is cleaned before the tool keeps it.
+
+// Text and URL cleaning.
+
+export const LIMITS = { short: 300, long: 1000, url: 2048 };
+
+/** Strips control characters, collapses whitespace and cuts to max characters. */
+export function clean(value, max = LIMITS.long) {
+  if (value === null || value === undefined) return '';
+  const text = String(value)
+    .replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e\u2066-\u2069]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return text.length > max ? `${text.slice(0, max - 1)}…` : text;
+}
+
+/** Resolves value against base and returns it only if it is http(s), else null. */
+export function safeUrl(value, base) {
+  if (typeof value !== 'string' || !value.trim() || value.length > LIMITS.url) return null;
+  try {
+    const url = new URL(value.trim(), base);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+// The head tags the cards read. Both the paste parser and the Microlink lookup return these names.
+
+export const TAGS = [
+  { name: 'title', selector: 'title', attr: 'text' },
+  { name: 'description', selector: 'meta[name="description"]', attr: 'content' },
+  { name: 'og:title', selector: 'meta[property="og:title"]', attr: 'content' },
+  { name: 'og:description', selector: 'meta[property="og:description"]', attr: 'content' },
+  { name: 'og:image', selector: 'meta[property="og:image"]', attr: 'content' },
+  { name: 'og:image:width', selector: 'meta[property="og:image:width"]', attr: 'content' },
+  { name: 'og:image:height', selector: 'meta[property="og:image:height"]', attr: 'content' },
+  { name: 'og:image:alt', selector: 'meta[property="og:image:alt"]', attr: 'content' },
+  { name: 'og:site_name', selector: 'meta[property="og:site_name"]', attr: 'content' },
+  { name: 'og:url', selector: 'meta[property="og:url"]', attr: 'content' },
+  { name: 'og:type', selector: 'meta[property="og:type"]', attr: 'content' },
+  { name: 'twitter:card', selector: 'meta[name="twitter:card"]', attr: 'content' },
+  { name: 'twitter:title', selector: 'meta[name="twitter:title"]', attr: 'content' },
+  { name: 'twitter:description', selector: 'meta[name="twitter:description"]', attr: 'content' },
+  { name: 'twitter:image', selector: 'meta[name="twitter:image"]', attr: 'content' },
+  { name: 'twitter:site', selector: 'meta[name="twitter:site"]', attr: 'content' },
+  { name: 'link icon', selector: 'link[rel~="icon"]', attr: 'href' },
+  { name: 'link canonical', selector: 'link[rel="canonical"]', attr: 'href' },
+  { name: 'link oembed', selector: 'link[type="application/json+oembed"]', attr: 'href' },
+];
+
+export const URL_TAGS = new Set(['og:image', 'og:url', 'twitter:image', 'link icon', 'link canonical', 'link oembed']);
+
+// Pasted HTML.
 
 const MAX_INPUT = 2_000_000;
 const MAX_TAGS = 200;
@@ -59,4 +110,78 @@ export function parseHtml(input) {
     tags.push([clean(name, 80), clean(value, URL_TAGS.has(name) ? LIMITS.url : LIMITS.long)]);
   }
   return tags.filter(([, value]) => value);
+}
+
+// Field selection: X reads twitter:* first and falls back to og:*, Slack and Telegram read og:* first.
+
+function first(map, names) {
+  for (const name of names) if (map.has(name)) return { value: map.get(name), from: name };
+  return null;
+}
+
+/** Builds { cards, rows } from tags ([name, value] pairs), an optional oEmbed object and the page URL. */
+export function buildPreview({ tags = [], oembed = null, pageUrl = '', pageRead = true }) {
+  const map = new Map();
+  for (const [name, value] of tags) if (value && !map.has(name)) map.set(name, value);
+  if (oembed) {
+    // oEmbed fills gaps only; the page's own tags win.
+    const add = (name, value) => value && !map.has(name) && map.set(name, value);
+    add('oembed title', oembed.title);
+    add('oembed provider_name', oembed.provider_name);
+    add('oembed author_name', oembed.author_name);
+    add('oembed thumbnail_url', oembed.thumbnail_url);
+  }
+  const base = safeUrl(map.get('og:url'), pageUrl) || safeUrl(map.get('link canonical'), pageUrl) || safeUrl(pageUrl) || undefined;
+  const host = base ? new URL(base).hostname.replace(/^www\./, '') : '';
+  const pickUrl = (names) => {
+    for (const name of names) {
+      const href = safeUrl(map.get(name), base);
+      if (href) return { value: href, from: name };
+    }
+    return null;
+  };
+
+  const title = first(map, ['og:title', 'title', 'oembed title']);
+  const description = first(map, ['og:description', 'description']);
+  const image = pickUrl(['og:image', 'oembed thumbnail_url']);
+  const site = first(map, ['og:site_name', 'oembed provider_name']);
+  const xTitle = first(map, ['twitter:title', 'og:title', 'title', 'oembed title']);
+  const xDescription = first(map, ['twitter:description', 'og:description', 'description']);
+  const xImage = pickUrl(['twitter:image', 'og:image', 'oembed thumbnail_url']);
+  const xCard = first(map, ['twitter:card']);
+  const size = [map.get('og:image:width'), map.get('og:image:height')].every((n) => /^\d+$/.test(n || ''))
+    ? `${map.get('og:image:width')} × ${map.get('og:image:height')}` : '';
+
+  const row = (field, pick, want, note = '') => ({ field, pick, want, note, status: !pick ? (pageRead ? 'missing' : 'not read') : pick.from === want ? 'found' : 'fallback' });
+  const rows = [
+    row('title', title, 'og:title'),
+    row('description', description, 'og:description'),
+    row('image', image, 'og:image', size),
+    row('site name', site, 'og:site_name'),
+    row('x card', xCard, 'twitter:card'),
+    row('x title', xTitle, 'twitter:title'),
+  ];
+
+  const alt = map.get('og:image:alt') || '';
+  const cards = {
+    url: base || pageUrl,
+    host,
+    telegram: { site: site?.value || '', title: title?.value || host, description: description?.value || '', image: image?.value || '', alt },
+    slack: { site: site?.value || host, title: title?.value || host, description: description?.value || '', image: image?.value || '', alt },
+    x: {
+      // X shows a summary card when twitter:card is missing or not the large one.
+      large: xCard?.value === 'summary_large_image' && Boolean(xImage),
+      title: xTitle?.value || host,
+      description: xDescription?.value || '',
+      image: xImage?.value || '',
+      alt,
+    },
+  };
+  return { cards, rows };
+}
+
+/** Counts for the fields summary line. */
+export function summarize(rows) {
+  const count = (s) => rows.filter((r) => r.status === s).length;
+  return { found: count('found'), fallback: count('fallback'), missing: count('missing'), 'not read': count('not read') };
 }

@@ -1,9 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { lookupHtml, lookupUrl } from '../lookup.js';
-import { microlinkUrl } from '../microlink.js';
-import { TAGS } from '../tags.js';
-import { messageFor, PASTE_HELPS } from '../messages.js';
+import { isPrivateHost, lookupHtml, lookupUrl, messageFor, microlinkUrl, PASTE_HELPS, readPageUrl } from '../lookup.js';
+import { buildPreview, TAGS } from '../parse.js';
 
 const json = (body, status = 200) => ({ ok: status >= 200 && status < 300, status, json: async () => body });
 
@@ -85,7 +83,6 @@ test('YouTube goes to its own oEmbed endpoint and never to Microlink', async () 
 });
 
 test('a provider-only result marks page tags as not read, never missing', async () => {
-  const { buildPreview } = await import('../fields.js');
   const { rows, cards } = buildPreview({ tags: [], pageRead: false, pageUrl: 'https://www.youtube.com/watch?v=x', oembed: { title: 'Me at the zoo', provider_name: 'YouTube', thumbnail_url: 'https://i.ytimg.com/vi/x/hqdefault.jpg' } });
   const status = Object.fromEntries(rows.map((r) => [r.field, r.status]));
   assert.deepEqual(status, { title: 'fallback', description: 'not read', image: 'fallback', 'site name': 'fallback', 'x card': 'not read', 'x title': 'fallback' });
@@ -142,4 +139,19 @@ test('pasted HTML is read with no network at all', () => {
 
 test('the request URL stays under common URL length limits', () => {
   assert.ok(microlinkUrl('https://example.com/' + 'a'.repeat(200)).length < 4000);
+});
+
+test('private, loopback, link-local and local names are refused before any lookup', () => {
+  for (const input of ['http://localhost/', 'http://127.0.0.1/', 'http://127.1/', 'http://2130706433/', 'http://10.0.0.5/', 'http://172.16.0.1/', 'http://192.168.1.10/admin', 'http://169.254.169.254/latest/meta-data/', 'http://100.64.0.1/', 'http://[::1]/', 'http://[fd00::1]/', 'http://[fe80::1]/', 'http://[::ffff:127.0.0.1]/', 'http://printer.local/', 'http://intranet/']) {
+    assert.equal(readPageUrl(input).error, 'private-url', input);
+  }
+  assert.equal(isPrivateHost('www.ivankristianto.com'), false);
+  assert.equal(isPrivateHost('8.8.8.8'), false);
+});
+
+test('reads plain addresses and rejects junk', () => {
+  assert.equal(readPageUrl('example.com/post').url, 'https://example.com/post');
+  assert.equal(readPageUrl('').error, 'empty-url');
+  assert.equal(readPageUrl('javascript:alert(1)').error, 'invalid-url');
+  assert.equal(readPageUrl('https://user:pass@example.com/').error, 'invalid-url');
 });
