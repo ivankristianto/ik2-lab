@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Embed preview</title>
+<script>if (window.top !== window) document.documentElement.setAttribute('data-embedded', '');</script>
+<link rel="stylesheet" href="/shared/tokens.css">
+<link rel="stylesheet" href="/shared/lab.css">
+<link rel="stylesheet" href="embed-preview.css">
+<script type="module" src="app.js"></script>
+</head>
+<body>
+<header class="lab-standalone">
+  <h1>Embed preview</h1>
+  <a class="lab-standalone__back" href="https://www.ivankristianto.com/lab/embed-preview/" data-site-link target="_blank" rel="noopener">ivankristianto.com/lab/embed-preview</a>
+</header>
+
+<main class="lab-stack">
+  <form class="lab-stack" id="url-form" novalidate>
+    <div class="lab-field">
+      <label class="lab-label" for="url">page address</label>
+      <div class="ep-url-row">
+        <input class="lab-input lab-input--code" id="url" name="url" type="url" value="https://www.ivankristianto.com/lab/font-split-inspector/" spellcheck="false" autocomplete="url" aria-describedby="url-hint">
+        <button class="lab-button" type="submit" id="url-submit">Preview</button>
+      </div>
+      <div class="lab-error" id="url-error" role="alert" hidden></div>
+      <span class="lab-hint" id="url-hint">Preview sends the address to Microlink, or to the provider for YouTube, Vimeo and similar links. Pasting sends nothing anywhere.</span>
+    </div>
+  </form>
+
+  <details class="ep-more" id="paste">
+    <summary>paste the page's HTML instead</summary>
+    <form class="lab-field ep-more__body" id="paste-form" novalidate>
+      <label class="lab-label" for="html">page html</label>
+      <textarea class="lab-textarea lab-textarea--code lab-textarea--short" id="html" name="html" spellcheck="false" aria-describedby="html-hint"></textarea>
+      <div class="lab-error" id="html-error" role="alert" hidden></div>
+      <span class="lab-hint" id="html-hint">View the page source and paste it, or just its &lt;head&gt;. Press Ctrl+Enter (⌘+Enter on a Mac) to read it. Nothing you paste leaves your browser; only the page's images load from their own sites.</span>
+      <div class="lab-actions"><button class="lab-button lab-button--secondary" type="submit">Read HTML</button></div>
+    </form>
+  </details>
+
+  <section class="lab-output" aria-labelledby="preview-head">
+    <div class="lab-output__head"><span id="preview-head">preview</span><span class="lab-output__note" id="note" aria-live="polite">approximations, not screenshots</span></div>
+    <div class="ep-cards" data-ref="cards"></div>
+    <div class="ep-mores">
+      <details class="ep-more">
+        <summary>fields <span class="ep-more__count" data-ref="fieldsCount"></span></summary>
+        <table class="lab-table ep-rows ep-more__body">
+          <thead><tr><th>field</th><th>value</th><th>from</th><th>status</th></tr></thead>
+          <tbody data-ref="fieldsBody"></tbody>
+        </table>
+      </details>
+      <details class="ep-more">
+        <summary>raw tags <span class="ep-more__count" data-ref="rawCount"></span></summary>
+        <table class="lab-table ep-rows ep-rows--raw2 ep-more__body">
+          <thead><tr><th>tag</th><th>value</th></tr></thead>
+          <tbody data-ref="rawBody"></tbody>
+        </table>
+        <p class="lab-hint ep-more__body" data-ref="rawEmpty" hidden>No meta, link or title tags found.</p>
+      </details>
+      <details class="ep-more">
+        <summary>oembed <span class="ep-more__count" data-ref="oembedCount"></span></summary>
+        <p class="lab-hint ep-more__body" data-ref="oembedNote"></p>
+        <table class="lab-table ep-more__body" data-ref="oembedTable" hidden>
+          <thead><tr><th>field</th><th>value</th></tr></thead>
+          <tbody data-ref="oembedBody"></tbody>
+        </table>
+      </details>
+    </div>
+  </section>
+</main>
+</body>
+</html>
