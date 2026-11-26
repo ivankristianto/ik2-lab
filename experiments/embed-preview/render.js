@@ -82,10 +82,11 @@ function fieldRow(r) {
   const value = !r.pick ? 'none' : r.field === 'image' ? [fileName(r.pick.value), r.note].filter(Boolean).join(', ') : r.pick.value;
   const valueCell = el('td', '', value);
   if (r.field === 'image' && r.pick) valueCell.title = r.pick.value;
-  const status = el('span', `lab-status lab-status--${r.status === 'found' ? 'ok' : 'warn'}`, r.status);
+  const kind = { found: ' lab-status--ok', fallback: ' lab-status--warn', missing: ' lab-status--warn' }[r.status] || '';
+  const status = el('span', `lab-status${kind}`, r.status);
   const statusCell = el('td', 'ep-key');
   statusCell.append(status);
-  const from = !r.pick ? `no ${r.want}` : r.status === 'fallback' ? `${r.pick.from}, no ${r.want}` : r.pick.from;
+  const from = r.status === 'not read' ? 'page not read' : !r.pick ? `no ${r.want}` : r.status === 'fallback' ? `${r.pick.from}, no ${r.want}` : r.pick.from;
   tr.append(el('td', 'ep-key', r.field), valueCell, el('td', 'ep-text', from), statusCell);
   return tr;
 }
@@ -120,11 +121,14 @@ export function renderResult(dom, result) {
   dom.cards.replaceChildren(telegram(cards.telegram, cards.url), slack(cards.slack, cards.url), x(cards.x, cards.host));
 
   const counts = summarize(rows);
-  dom.fieldsCount.textContent = ['found', 'fallback', 'missing'].filter((k) => counts[k]).map((k) => `${counts[k]} ${k}`).join(' · ');
+  dom.fieldsCount.textContent = ['found', 'fallback', 'missing', 'not read'].filter((k) => counts[k]).map((k) => `${counts[k]} ${k}`).join(' · ');
   dom.fieldsBody.replaceChildren(...rows.map(fieldRow));
 
   dom.rawCount.textContent = `${result.tags.length} · ${result.source}`;
   rowsOf(dom.rawBody, result.tags.map(([name, value]) => [[name, 'ep-key'], [value]]));
+  dom.rawEmpty.textContent = result.pageRead === false
+    ? `Only ${result.source}'s oEmbed was asked, so the page's own tags weren't read. Paste its HTML to see them.`
+    : 'No meta, link or title tags found.';
   dom.rawEmpty.hidden = result.tags.length > 0;
 
   dom.oembedCount.textContent = result.oembedNote;

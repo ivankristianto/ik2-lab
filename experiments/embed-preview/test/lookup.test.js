@@ -81,6 +81,15 @@ test('YouTube goes to its own oEmbed endpoint and never to Microlink', async () 
   assert.equal(r.source, 'YouTube');
   assert.equal(r.oembed.title, 'Me at the zoo');
   assert.equal(r.oembed.html, '<iframe src="https://www.youtube.com/embed/jNQXAC9IVRw"></iframe>');
+  assert.equal(r.pageRead, false);
+});
+
+test('a provider-only result marks page tags as not read, never missing', async () => {
+  const { buildPreview } = await import('../fields.js');
+  const { rows, cards } = buildPreview({ tags: [], pageRead: false, pageUrl: 'https://www.youtube.com/watch?v=x', oembed: { title: 'Me at the zoo', provider_name: 'YouTube', thumbnail_url: 'https://i.ytimg.com/vi/x/hqdefault.jpg' } });
+  const status = Object.fromEntries(rows.map((r) => [r.field, r.status]));
+  assert.deepEqual(status, { title: 'fallback', description: 'not read', image: 'fallback', 'site name': 'fallback', 'x card': 'not read', 'x title': 'fallback' });
+  assert.equal(cards.telegram.image, 'https://i.ytimg.com/vi/x/hqdefault.jpg');
 });
 
 test('when the provider fails, Microlink reads the page instead', async () => {

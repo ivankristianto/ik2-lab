@@ -13,7 +13,8 @@ export async function lookupUrl(input, fetchImpl = fetch) {
   if (provider) {
     try {
       const oembed = await fetchOembed(provider.endpoint, fetchImpl);
-      return { source: provider.name, pageUrl: url, tags: [], oembed, oembedNote: `from ${provider.name}` };
+      // Only the provider was asked, so the page's own tags are unknown, not missing.
+      return { source: provider.name, pageUrl: url, tags: [], pageRead: false, oembed, oembedNote: `from ${provider.name}` };
     } catch {
       // The provider didn't answer; Microlink can still read the page tags.
     }

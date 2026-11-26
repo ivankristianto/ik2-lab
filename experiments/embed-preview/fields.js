@@ -8,7 +8,7 @@ function first(map, names) {
 }
 
 /** Builds { cards, rows } from tags ([name, value] pairs), an optional oEmbed object and the page URL. */
-export function buildPreview({ tags = [], oembed = null, pageUrl = '' }) {
+export function buildPreview({ tags = [], oembed = null, pageUrl = '', pageRead = true }) {
   const map = new Map();
   for (const [name, value] of tags) if (value && !map.has(name)) map.set(name, value);
   if (oembed) {
@@ -40,7 +40,7 @@ export function buildPreview({ tags = [], oembed = null, pageUrl = '' }) {
   const size = [map.get('og:image:width'), map.get('og:image:height')].every((n) => /^\d+$/.test(n || ''))
     ? `${map.get('og:image:width')} × ${map.get('og:image:height')}` : '';
 
-  const row = (field, pick, want, note = '') => ({ field, pick, want, note, status: !pick ? 'missing' : pick.from === want ? 'found' : 'fallback' });
+  const row = (field, pick, want, note = '') => ({ field, pick, want, note, status: !pick ? (pageRead ? 'missing' : 'not read') : pick.from === want ? 'found' : 'fallback' });
   const rows = [
     row('title', title, 'og:title'),
     row('description', description, 'og:description'),
@@ -71,5 +71,5 @@ export function buildPreview({ tags = [], oembed = null, pageUrl = '' }) {
 /** Counts for the fields summary line. */
 export function summarize(rows) {
   const count = (s) => rows.filter((r) => r.status === s).length;
-  return { found: count('found'), fallback: count('fallback'), missing: count('missing') };
+  return { found: count('found'), fallback: count('fallback'), missing: count('missing'), 'not read': count('not read') };
 }
