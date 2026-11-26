@@ -219,6 +219,7 @@
   display: grid;
 }
 
+.ep-cards[hidden],
 .ep-mores[hidden] {
   display: none;
 }

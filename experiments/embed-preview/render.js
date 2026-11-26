@@ -108,12 +108,14 @@ const OEMBED_NOTES = {
 /** Empties the result area after a failed lookup, so old cards never pass for the new address. */
 export function clearResult(dom) {
   dom.cards.replaceChildren();
+  dom.cards.hidden = true;
   dom.mores.hidden = true;
 }
 
 /** Fills the result area. dom holds the elements index.html marks with data-ref. */
 export function renderResult(dom, result) {
   const { cards, rows } = buildPreview(result);
+  dom.cards.hidden = false;
   dom.mores.hidden = false;
   dom.cards.replaceChildren(telegram(cards.telegram, cards.url), slack(cards.slack, cards.url), x(cards.x, cards.host));
 
