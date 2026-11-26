@@ -12,6 +12,7 @@ The static tools ship as one nginx image, built to run on Dokploy as `lab.ivankr
 | --- | --- | --- |
 | [`font-split`](experiments/font-split/) | Paste `@font-face` rules and sample text, see which font file draws each character. | demo |
 | [`a2ui-playground`](experiments/a2ui-playground/) | Render canned or live A2UI v1.0 agent responses and see what the validator says about them. | demo |
+| [`embed-preview`](experiments/embed-preview/) | Paste a URL or a page's HTML, see approximate Telegram, Slack and X link cards and the tags behind them. | demo |
 
 ## Layout
 
