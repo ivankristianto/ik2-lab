@@ -1,0 +1,25 @@
+name: a2ui-playground
+
+on:
+  pull_request:
+    paths: ['experiments/a2ui-playground/**', '.github/workflows/a2ui-playground.yml']
+  push:
+    branches: [main]
+    paths: ['experiments/a2ui-playground/**', '.github/workflows/a2ui-playground.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: validator and provider tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - run: node --test tests/*.test.js
+        working-directory: experiments/a2ui-playground
