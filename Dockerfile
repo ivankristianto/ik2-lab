@@ -15,6 +15,7 @@ COPY docker/nginx/default.conf.template /etc/nginx/templates/default.conf.templa
 # README, manifest or env file never reaches the web root.
 COPY shared/tokens.css shared/lab.css /srv/lab/shared/
 COPY experiments/font-split/index.html /srv/lab/experiments/font-split/
+COPY experiments/a2ui-playground/index.html experiments/a2ui-playground/playground.css experiments/a2ui-playground/app.js experiments/a2ui-playground/protocol.js experiments/a2ui-playground/evaluate.js experiments/a2ui-playground/render.js experiments/a2ui-playground/presets.js experiments/a2ui-playground/providers.js /srv/lab/experiments/a2ui-playground/
 
 # 127.0.0.1, not localhost: the template replaces the packaged default.conf, so
 # nginx listens on IPv4 only and localhost (::1 first) would be refused.

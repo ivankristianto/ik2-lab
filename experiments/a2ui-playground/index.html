@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A2UI playground</title>
+<script>if (window.top !== window) document.documentElement.setAttribute('data-embedded', '');</script>
+<link rel="stylesheet" href="/shared/tokens.css">
+<link rel="stylesheet" href="/shared/lab.css">
+<link rel="stylesheet" href="playground.css">
+<script type="module" src="app.js"></script>
+</head>
+<body>
+<header class="lab-standalone">
+  <h1>A2UI playground</h1>
+  <a class="lab-standalone__back" href="https://www.ivankristianto.com/lab/a2ui-playground/" data-site-link target="_blank" rel="noopener">ivankristianto.com/lab/a2ui-playground</a>
+</header>
+
+<main class="lab-split">
+  <div class="lab-stack">
+    <fieldset class="pg-source">
+      <legend class="lab-label">where the response comes from</legend>
+      <label class="pg-choice"><input type="radio" name="source" value="preset" checked> a preset, no key needed</label>
+      <label class="pg-choice"><input type="radio" name="source" value="live"> a live model, with your own key</label>
+    </fieldset>
+
+    <div class="lab-stack" id="preset-panel">
+      <div class="lab-field">
+        <label class="lab-label" for="preset">preset</label>
+        <select class="lab-select" id="preset" aria-describedby="preset-hint"></select>
+        <span class="lab-hint" id="preset-hint">Each preset is a canned agent response that shows a different set of components. The last one is broken on purpose, to show what the validator reports.</span>
+      </div>
+    </div>
+
+    <div class="lab-stack" id="live-panel" hidden>
+      <div class="pg-notice" role="note" aria-labelledby="notice-title">
+        <p class="lab-label" id="notice-title">about your key</p>
+        <p>Your key goes from this browser straight to <strong id="notice-host">api.anthropic.com</strong> and nowhere else. The page holds it in memory only, so a reload forgets it. It is never saved or logged.</p>
+        <p>Anthropic, OpenAI and Google all advise against using API keys in a browser. Use a key with a low spend limit, or a throwaway one you delete afterwards.</p>
+      </div>
+      <div class="lab-field">
+        <label class="lab-label" for="provider">provider</label>
+        <select class="lab-select" id="provider" aria-describedby="provider-hint">
+          <option value="anthropic">Anthropic</option>
+          <option value="openai">OpenAI</option>
+          <option value="gemini">Google Gemini</option>
+        </select>
+        <span class="lab-hint" id="provider-hint">Each request goes from your browser to this provider's API. No server of mine is involved.</span>
+      </div>
+      <div class="lab-field">
+        <label class="lab-label" for="model">model</label>
+        <input class="lab-input lab-input--code" id="model" spellcheck="false" autocomplete="off" aria-describedby="model-hint">
+        <span class="lab-hint" id="model-hint">Any model ID your key can use. The default is the provider's cheapest current model.</span>
+      </div>
+      <div class="lab-field">
+        <label class="lab-label" for="key">API key</label>
+        <input class="lab-input lab-input--code" id="key" type="password" autocomplete="off" spellcheck="false" data-1p-ignore data-lpignore="true" aria-describedby="key-hint">
+        <span class="lab-hint" id="key-hint"></span>
+      </div>
+      <div class="lab-field">
+        <label class="lab-label" for="prompt">what to build</label>
+        <textarea class="lab-textarea lab-textarea--short" id="prompt" aria-describedby="prompt-hint">A sign-up form for a weekend workshop: name, email, and a choice of the Saturday or Sunday session.</textarea>
+        <span class="lab-hint" id="prompt-hint">Describe the interface in a sentence or two, then press Generate or Ctrl+Enter (⌘+Enter on a Mac). The page asks for A2UI messages that use only the components listed under the result.</span>
+      </div>
+      <div class="lab-actions">
+        <button class="lab-button" type="button" id="generate">Generate</button>
+        <span class="lab-status" id="live-status" role="status"></span>
+      </div>
+    </div>
+
+    <div class="lab-field">
+      <label class="lab-label" for="messages">A2UI messages</label>
+      <textarea class="lab-textarea lab-textarea--code" id="messages" rows="16" spellcheck="false" aria-describedby="messages-hint"></textarea>
+      <span class="lab-hint" id="messages-hint">A2UI v1.0 messages: a JSON array, or one message per line. Edit them and press Render, or Ctrl+Enter (⌘+Enter on a Mac). Nothing leaves your browser unless you press Generate.</span>
+    </div>
+    <div class="lab-actions">
+      <button class="lab-button" type="button" id="render">Render</button>
+      <button class="lab-button lab-button--secondary" type="button" id="reset">Reset preset</button>
+    </div>
+  </div>
+
+  <section class="lab-output" aria-labelledby="result-label">
+    <div class="lab-output__head"><span id="result-label">result</span><span class="lab-output__note" id="note" aria-live="polite"></span></div>
+    <p class="lab-hint">This is what an A2UI renderer draws from the messages. Fields and buttons work, but nothing calls a real agent: press a button to see the action message it would send.</p>
+    <div id="problems" aria-live="polite"></div>
+    <div class="lab-stack" id="surfaces"></div>
+    <div class="lab-stack" id="action-wrap" hidden>
+      <div class="lab-output__head"><span>action sent</span><span class="lab-output__note">renderer to agent</span></div>
+      <pre class="pg-code" id="action" tabindex="0"></pre>
+      <div class="lab-stack" id="reply-wrap" hidden>
+        <div class="lab-output__head"><span>scripted reply</span><span class="lab-output__note">agent to renderer</span></div>
+        <p class="lab-hint">There is no agent behind this preset. This reply is written into it, to show how an agent answers an action with new messages.</p>
+        <pre class="pg-code" id="reply" tabindex="0"></pre>
+      </div>
+    </div>
+    <p class="lab-hint" id="supported"></p>
+    <p class="lab-hint">Read the <a href="https://a2ui.org/specification/v1.0-a2ui/" target="_blank" rel="noopener">A2UI v1.0 specification</a> for what each message and component means.</p>
+  </section>
+</main>
+
+<script>
+// The entry's iframe sends its origin as the referrer. A checkout served from localhost talks to the ik2 dev stack.
+const SITE_ORIGINS = ['https://www.ivankristianto.com', 'http://localhost:8080'];
+const siteOrigin = (() => {
+  try {
+    const from = new URL(document.referrer).origin;
+    if (SITE_ORIGINS.includes(from)) return from;
+  } catch {}
+  return ['localhost', '127.0.0.1'].includes(location.hostname) ? SITE_ORIGINS[1] : SITE_ORIGINS[0];
+})();
+for (const a of document.querySelectorAll('a[data-site-link]')) a.href = siteOrigin + new URL(a.href).pathname;
+
+if (window.top !== window) {
+  const report = () => parent.postMessage({ type: 'ik2-lab:resize', height: Math.ceil(document.body.getBoundingClientRect().height) }, siteOrigin);
+  new ResizeObserver(report).observe(document.body);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,266 @@
+/* A2UI playground: the source switch, the key notice, and how the renderer draws basic-catalog components. Tokens only. */
+
+/* The input column stays packed at the top when the result column is taller. */
+.lab-split > .lab-stack {
+  align-content: start;
+}
+
+/* .lab-stack sets display: grid, which would otherwise beat the hidden attribute. */
+.lab-stack[hidden],
+.lab-field[hidden],
+.lab-button[hidden] {
+  display: none;
+}
+
+.pg-source {
+  display: grid;
+  gap: var(--wp--preset--spacing--2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.pg-choice {
+  display: flex;
+  gap: var(--wp--preset--spacing--3);
+  align-items: center;
+  min-height: 2.75rem;
+  cursor: pointer;
+}
+
+.pg-choice input {
+  width: var(--wp--custom--target--size);
+  height: var(--wp--custom--target--size);
+  margin: 0;
+  accent-color: var(--wp--preset--color--signal);
+}
+
+/* The rendered surface sits on Paper inside the Surface frame, so it reads as "the agent's UI", apart from the tool. */
+.a2ui-surface {
+  padding: var(--wp--preset--spacing--5);
+  background: var(--wp--preset--color--paper);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--preset--border-radius--md);
+}
+
+.a2ui-column {
+  display: flex;
+  flex-direction: column;
+  justify-content: var(--a2ui-justify, flex-start);
+  align-items: var(--a2ui-align, stretch);
+  gap: var(--wp--preset--spacing--4);
+}
+
+.a2ui-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: var(--a2ui-justify, flex-start);
+  align-items: var(--a2ui-align, stretch);
+  gap: var(--wp--preset--spacing--4);
+}
+
+.a2ui-row > * {
+  min-width: 0;
+}
+
+.a2ui-row > .lab-field,
+.a2ui-row > .a2ui-column {
+  flex: 1 1 0%;
+}
+
+.a2ui-text {
+  white-space: pre-line;
+}
+
+.a2ui-list--horizontal {
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+
+.a2ui-divider--vertical {
+  width: auto;
+  align-self: stretch;
+  border-top: 0;
+  border-left: 1px solid var(--wp--preset--color--line);
+}
+
+.a2ui-checks {
+  display: grid;
+  gap: var(--wp--preset--spacing--1);
+}
+
+.a2ui-checks:empty {
+  display: none;
+}
+
+/* The key notice sits before the key field, so it is read before anything is pasted. */
+.pg-notice {
+  display: grid;
+  gap: var(--wp--preset--spacing--2);
+  padding: var(--wp--preset--spacing--4);
+  background: var(--wp--preset--color--soft-paper);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--preset--border-radius--md);
+  font-size: var(--wp--preset--font-size--x-small);
+}
+
+.a2ui-list {
+  display: grid;
+  gap: var(--wp--preset--spacing--3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.a2ui-card {
+  display: grid;
+  gap: var(--wp--preset--spacing--3);
+  padding: var(--wp--preset--spacing--4);
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--preset--border-radius--lg);
+}
+
+.a2ui-heading {
+  font-size: var(--wp--preset--font-size--medium);
+}
+
+.a2ui-caption {
+  color: var(--wp--preset--color--graphite);
+  font-size: var(--wp--preset--font-size--x-small);
+}
+
+.a2ui-divider {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--wp--preset--color--line);
+}
+
+.a2ui-check {
+  display: flex;
+  gap: var(--wp--preset--spacing--3);
+  align-items: center;
+  min-height: 2.75rem;
+}
+
+.a2ui-check input {
+  width: var(--wp--custom--target--size);
+  height: var(--wp--custom--target--size);
+  margin: 0;
+  accent-color: var(--wp--preset--color--signal);
+}
+
+.a2ui-options {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.a2ui-options legend {
+  margin-bottom: var(--wp--preset--spacing--2);
+  padding: 0;
+}
+
+.a2ui-slider {
+  display: flex;
+  gap: var(--wp--preset--spacing--3);
+  align-items: center;
+  min-height: 2.75rem;
+}
+
+.a2ui-slider input {
+  flex: 1;
+  min-height: 2.75rem;
+  accent-color: var(--wp--preset--color--signal);
+}
+
+.a2ui-slider output {
+  min-width: var(--wp--preset--spacing--6);
+  font-family: var(--wp--preset--font-family--mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.a2ui-link {
+  min-height: 2.75rem;
+  padding: 0;
+  color: var(--wp--preset--color--signal);
+  background: none;
+  border: 0;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+}
+
+.a2ui-tabs [role="tablist"] {
+  display: flex;
+  gap: var(--wp--preset--spacing--4);
+  border-bottom: 1px solid var(--wp--preset--color--line);
+}
+
+.a2ui-tabs [role="tab"] {
+  min-height: 2.75rem;
+  padding: 0;
+  color: var(--wp--preset--color--graphite);
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  font: inherit;
+  font-family: var(--wp--preset--font-family--mono);
+  font-size: var(--wp--preset--font-size--x-small);
+  cursor: pointer;
+  transition: color var(--wp--custom--transition--base), border-color var(--wp--custom--transition--base);
+}
+
+.a2ui-tabs [role="tab"][aria-selected="true"] {
+  color: var(--wp--preset--color--ink);
+  border-bottom-color: var(--wp--preset--color--ink);
+}
+
+.a2ui-tabs [role="tabpanel"] {
+  padding-top: var(--wp--preset--spacing--4);
+}
+
+/* The action a button would send to the agent, shown as data. */
+.pg-code {
+  margin: 0;
+  padding: var(--wp--preset--spacing--3) var(--wp--preset--spacing--4);
+  overflow-x: auto;
+  background: var(--wp--preset--color--code-paper);
+  border-radius: var(--wp--preset--border-radius--md);
+  font-family: var(--wp--preset--font-family--mono);
+  font-size: var(--wp--preset--font-size--x-small);
+  line-height: var(--wp--custom--line-height--normal);
+}
+
+.pg-problems {
+  display: grid;
+  gap: var(--wp--preset--spacing--3);
+  font-size: var(--wp--preset--font-size--x-small);
+  margin: var(--wp--preset--spacing--3) 0 0;
+  padding-left: var(--wp--preset--spacing--5);
+}
+
+.pg-problems code {
+  display: block;
+  color: var(--wp--preset--color--graphite);
+  overflow-wrap: break-word;
+}
+
+@media (max-width: 40em) {
+
+  /* Side-by-side fields get too narrow on a phone, so a Row stacks there. */
+  .a2ui-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .a2ui-row > .lab-field,
+  .a2ui-row > .a2ui-column {
+    align-self: stretch;
+  }
+}

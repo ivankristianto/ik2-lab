@@ -1,0 +1,9 @@
+{
+  "name": "a2ui-playground",
+  "private": true,
+  "type": "module",
+  "description": "Tests for the A2UI playground. The tool itself needs no install or build.",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  }
+}
