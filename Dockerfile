@@ -16,7 +16,7 @@ COPY docker/nginx/default.conf.template /etc/nginx/templates/default.conf.templa
 COPY shared/tokens.css shared/lab.css /srv/lab/shared/
 COPY experiments/font-split/index.html /srv/lab/experiments/font-split/
 COPY experiments/a2ui-playground/index.html experiments/a2ui-playground/playground.css experiments/a2ui-playground/app.js experiments/a2ui-playground/protocol.js experiments/a2ui-playground/evaluate.js experiments/a2ui-playground/render.js experiments/a2ui-playground/presets.js experiments/a2ui-playground/providers.js /srv/lab/experiments/a2ui-playground/
-COPY experiments/embed-preview/index.html experiments/embed-preview/embed-preview.css experiments/embed-preview/*.js /srv/lab/experiments/embed-preview/
+COPY experiments/embed-preview/index.html experiments/embed-preview/embed-preview.css experiments/embed-preview/app.js experiments/embed-preview/lookup.js experiments/embed-preview/microlink.js experiments/embed-preview/oembed.js experiments/embed-preview/parse.js experiments/embed-preview/fields.js experiments/embed-preview/render.js experiments/embed-preview/tags.js experiments/embed-preview/url.js experiments/embed-preview/text.js experiments/embed-preview/messages.js experiments/embed-preview/sample.js /srv/lab/experiments/embed-preview/
 
 # 127.0.0.1, not localhost: the template replaces the packaged default.conf, so
 # nginx listens on IPv4 only and localhost (::1 first) would be refused.
