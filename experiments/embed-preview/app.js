@@ -1,7 +1,7 @@
 // Wires the form, the paste section and the result together, and reports height to the entry page.
 import { lookupHtml, lookupUrl } from './lookup.js';
 import { messageFor, PASTE_HELPS } from './messages.js';
-import { renderResult } from './render.js';
+import { clearResult, renderResult } from './render.js';
 import { SAMPLE } from './sample.js';
 
 const $ = (id) => document.getElementById(id);
@@ -31,7 +31,8 @@ $('url-form').addEventListener('submit', async (e) => {
   try {
     show(await lookupUrl($('url').value));
   } catch (error) {
-    $('note').textContent = NOTE;
+    clearResult(dom);
+    $('note').textContent = 'nothing read yet';
     showError($('url-error'), $('url'), error);
     // When the lookup can't help, the paste section is the way forward.
     if (PASTE_HELPS.has(error.code)) $('paste').open = true;

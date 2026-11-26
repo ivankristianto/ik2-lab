@@ -85,7 +85,8 @@ function fieldRow(r) {
   const status = el('span', `lab-status lab-status--${r.status === 'found' ? 'ok' : 'warn'}`, r.status);
   const statusCell = el('td', 'ep-key');
   statusCell.append(status);
-  tr.append(el('td', 'ep-key', r.field), valueCell, el('td', 'ep-text', r.pick ? r.pick.from : 'no tag'), statusCell);
+  const from = !r.pick ? `no ${r.want}` : r.status === 'fallback' ? `${r.pick.from}, no ${r.want}` : r.pick.from;
+  tr.append(el('td', 'ep-key', r.field), valueCell, el('td', 'ep-text', from), statusCell);
   return tr;
 }
 
@@ -104,9 +105,16 @@ const OEMBED_NOTES = {
   'declared, not readable here': "The page declares an oEmbed link, but its provider doesn't let a browser read it, so the cards use the page tags.",
 };
 
+/** Empties the result area after a failed lookup, so old cards never pass for the new address. */
+export function clearResult(dom) {
+  dom.cards.replaceChildren();
+  dom.mores.hidden = true;
+}
+
 /** Fills the result area. dom holds the elements index.html marks with data-ref. */
 export function renderResult(dom, result) {
   const { cards, rows } = buildPreview(result);
+  dom.mores.hidden = false;
   dom.cards.replaceChildren(telegram(cards.telegram, cards.url), slack(cards.slack, cards.url), x(cards.x, cards.host));
 
   const counts = summarize(rows);

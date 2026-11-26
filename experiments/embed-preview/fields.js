@@ -40,14 +40,14 @@ export function buildPreview({ tags = [], oembed = null, pageUrl = '' }) {
   const size = [map.get('og:image:width'), map.get('og:image:height')].every((n) => /^\d+$/.test(n || ''))
     ? `${map.get('og:image:width')} × ${map.get('og:image:height')}` : '';
 
-  const status = (found, preferred) => (!found ? 'missing' : preferred.includes(found.from) ? 'found' : 'fallback');
+  const row = (field, pick, want, note = '') => ({ field, pick, want, note, status: !pick ? 'missing' : pick.from === want ? 'found' : 'fallback' });
   const rows = [
-    { field: 'title', pick: title, status: status(title, ['og:title']) },
-    { field: 'description', pick: description, status: status(description, ['og:description']) },
-    { field: 'image', pick: image, status: status(image, ['og:image']), note: size },
-    { field: 'site name', pick: site, status: status(site, ['og:site_name']) },
-    { field: 'x card', pick: xCard, status: status(xCard, ['twitter:card']) },
-    { field: 'x title', pick: xTitle, status: status(xTitle, ['twitter:title']) },
+    row('title', title, 'og:title'),
+    row('description', description, 'og:description'),
+    row('image', image, 'og:image', size),
+    row('site name', site, 'og:site_name'),
+    row('x card', xCard, 'twitter:card'),
+    row('x title', xTitle, 'twitter:title'),
   ];
 
   const alt = map.get('og:image:alt') || '';

@@ -219,6 +219,10 @@
   display: grid;
 }
 
+.ep-mores[hidden] {
+  display: none;
+}
+
 .ep-more {
   container-type: inline-size;
   border-top: 1px solid var(--wp--preset--color--line);
