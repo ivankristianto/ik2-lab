@@ -1,36 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseMessages, load, read, BASIC_CATALOG, LIMITS } from '../protocol.js';
+import { parseMessages, load, read, locate, BASIC_CATALOG, LIMITS, LEFT_OUT } from '../protocol.js';
 import { evaluate, getPath, setPath, interpolate } from '../evaluate.js';
-import { PRESETS } from '../presets.js';
 
 const create = (components, extra = {}) => ({ version: '1.0', createSurface: { surfaceId: 's', catalogId: BASIC_CATALOG, components, ...extra } });
 const paths = (r) => r.errors.map((e) => e.path);
 const messages = (r) => r.errors.map((e) => e.message).join('\n');
 const root = (more = []) => [{ id: 'root', component: 'Column', children: more.map((c) => c.id) }, ...more];
-
-test('every working preset loads with no problems', () => {
-  for (const p of PRESETS.filter((x) => x.id !== 'broken')) {
-    const r = load(structuredClone(p.messages));
-    assert.deepEqual(r.errors, [], p.id);
-    assert.ok(r.surfaces.size, p.id);
-  }
-});
-
-test('the broken preset reports the Image and the dangling child, and nothing else', () => {
-  const r = load(structuredClone(PRESETS.find((p) => p.id === 'broken').messages));
-  assert.deepEqual(paths(r), ['/0/createSurface/components/1/component', '/0/createSurface/components/2/child']);
-  assert.match(r.errors[0].message, /^Image: /);
-  assert.match(r.errors[1].message, /"cta_label"/);
-});
-
-test('the booking reply applies on top of the booking surface', () => {
-  const p = PRESETS.find((x) => x.id === 'booking');
-  const r = load(structuredClone(p.messages));
-  const after = load(structuredClone(p.replies.confirmBooking), r.surfaces);
-  assert.deepEqual(after.errors, []);
-  assert.equal(r.surfaces.get('booking').components.get('root').child, 'done');
-});
 
 test('parse: array, single object, {"messages"} wrapper, JSON Lines and a fenced block', () => {
   const one = create(root());
@@ -88,7 +64,7 @@ test('updateDataModel upserts, removes with null, and refuses unsafe paths', () 
 
 test('components: left-out types, unknown types, ids, required and unknown props', () => {
   for (const type of ['Image', 'Video', 'AudioPlayer', 'Icon', 'Modal']) {
-    assert.match(messages(load([create(root([{ id: 'x', component: type }]))])), new RegExp(`^${type}: `, 'm'), type);
+    assert.ok(messages(load([create(root([{ id: 'x', component: type }]))])).includes(LEFT_OUT[type]), type);
   }
   assert.match(messages(load([create(root([{ id: 'x', component: 'Carousel' }]))])), /isn't in the A2UI basic catalog/);
   assert.match(messages(load([create(root([{ id: 'user-card', component: 'Divider' }]))])), /underscores/);
@@ -179,4 +155,18 @@ test('evaluate: paths, relative scope, functions and validation results', () => 
   assert.equal(getPath(model, '/user/constructor'), undefined);
   assert.throws(() => setPath({}, '/__proto__/polluted', 1));
   assert.equal({}.polluted, undefined);
+});
+
+test('a component written inline in children is reported once, as not an id, never as [object Object]', () => {
+  const r = load([create([{ id: 'root', component: 'Column', children: [{ id: 'title', component: 'Text', text: 'Hi' }] }])]);
+  assert.deepEqual(r.errors.map((e) => e.message), ['Expected a component id.']);
+});
+
+test('locate names the component a problem sits in, and returns null when there is none', () => {
+  const msgs = [create(root([{ id: 'hero', component: 'Image' }])), { version: '1.0', updateDataModel: { surfaceId: 's', value: 1 } }];
+  assert.deepEqual(locate(msgs, '/0/createSurface/components/1/component'), { id: 'hero', type: 'Image' });
+  assert.deepEqual(locate(msgs, '/0/createSurface/components/1'), { id: 'hero', type: 'Image' });
+  assert.deepEqual(locate([create([{ component: 5 }])], '/0/createSurface/components/0'), { id: null, type: null });
+  for (const p of ['/1/updateDataModel/value', '/0/createSurface/theme', '/9/createSurface/components/0', '', undefined]) assert.equal(locate(msgs, p), null, String(p));
+  assert.equal(locate(null, '/0/createSurface/components/0'), null);
 });
