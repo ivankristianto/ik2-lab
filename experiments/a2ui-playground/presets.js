@@ -262,6 +262,42 @@ const mistakes = [
   ] } },
 ];
 
+// The error loop: a bad update, the renderer's error message back to the agent, and the agent's fix.
+const selfcorrect = [
+  surface('rsvp', [
+    { id: 'root', component: 'Card', child: 'body' },
+    { id: 'body', component: 'Column', children: ['title', 'name'] },
+    text('title', '# RSVP for Sunday lunch'),
+    { id: 'name', component: 'TextField', label: 'Your name', value: path('/rsvp/name') },
+  ], { rsvp: { name: 'Ayu' } }),
+  update('rsvp', [
+    { id: 'body', component: 'Column', children: ['title', 'name', 'go'] },
+    { id: 'go', component: 'Button', label: 'Count me in', action: { event: { name: 'rsvpYes' } } },
+  ]),
+  update('rsvp', [
+    { id: 'body', component: 'Column', children: ['title', 'name', 'go'] },
+    ...button('go', 'Count me in', { name: 'rsvpYes', context: { name: path('/rsvp/name') } }, 'primary'),
+  ]),
+];
+
+// sendDataModel: every message to the agent carries the surface's whole data model. Preview runs a function locally.
+const feedback = [{
+  version: '1.0',
+  createSurface: { surfaceId: 'survey', catalogId: BASIC_CATALOG, sendDataModel: true, dataModel: { survey: { stars: 4, again: true, note: 'More time for questions, please.', internalId: 'u-8812' } }, components: [
+    { id: 'root', component: 'Card', child: 'body' },
+    { id: 'body', component: 'Column', children: ['title', 'stars', 'again', 'note', 'actions'] },
+    text('title', '# How was the workshop?'),
+    { id: 'stars', component: 'Slider', label: 'Stars', min: 1, max: 5, steps: 4, value: path('/survey/stars') },
+    { id: 'again', component: 'CheckBox', label: 'I would come again', value: path('/survey/again') },
+    { id: 'note', component: 'TextField', label: 'Anything else?', variant: 'longText', value: path('/survey/note') },
+    { id: 'actions', component: 'Row', children: ['send', 'preview'], align: 'center' },
+    ...button('send', 'Send feedback', { name: 'sendFeedback' }, 'primary'),
+    { id: 'preview', component: 'Button', child: 'preview_label', variant: 'borderless',
+      action: { functionCall: call('formatString', { value: '${/survey/stars} stars. ${/survey/note}' }) } },
+    text('preview_label', 'Preview my feedback'),
+  ] },
+}];
+
 // group puts the preset under a heading in the picker; shows is the hint under it; steps adds the step-through control.
 export const PRESETS = [
   { id: 'contact', group: 'forms and layout', label: 'contact form', messages: contact,
@@ -274,12 +310,16 @@ export const PRESETS = [
     shows: 'Press Confirm booking: the action goes to the agent, and a scripted reply redraws the card.' },
   { id: 'wizard', group: 'actions and replies', label: 'three-step sign-up', messages: wizard, replies: wizardReplies,
     shows: 'Three turns. Each Next is an action and each step is the agent\'s reply. What you type survives every redraw.' },
+  { id: 'feedback', group: 'actions and replies', label: 'feedback with the data model attached', messages: feedback,
+    shows: 'sendDataModel is on, so Send feedback carries the whole data model, a field no one sees included. Preview runs in the renderer and sends nothing.' },
   { id: 'trip', group: 'actions and replies', label: 'two surfaces, one conversation', messages: trip, replies: tripReplies,
     shows: 'Two surfaces on one screen. Pick a flight: one action, and the reply changes both surfaces.' },
   { id: 'tracker', group: 'messages over time', label: 'live tracker, data only', messages: tracker, steps: true,
     shows: 'One createSurface, then only updateDataModel. The card changes and no component is sent twice. Press Play all.' },
   { id: 'lifecycle', group: 'messages over time', label: 'a surface from start to finish', messages: stream, steps: true,
     shows: 'All four message types in order, and a second surface created then deleted. Step through them.' },
+  { id: 'selfcorrect', group: 'messages over time', label: 'an agent that fixes its mistake', messages: selfcorrect, steps: true,
+    shows: 'Message 2 is wrong, so the renderer sends an error back instead of drawing it. Message 3 is the agent\'s fix. Step through.' },
   { id: 'hostile', group: 'what gets caught', label: 'hostile response', messages: hostile,
     shows: 'Valid A2UI with HTML and script in its strings. A2UI sends no code, so all of it draws as plain text.' },
   { id: 'mistakes', group: 'what gets caught', label: 'what models get wrong', messages: mistakes,
