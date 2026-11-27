@@ -85,3 +85,18 @@ test('typing into a bound field updates the data model and every Text bound to i
   assert.equal(s.dataModel.trip.budget, 1000);
   assert.ok(byClass(view.element, 'a2ui-caption').some((n) => /1,000/.test(n.textContent)));
 });
+
+test('a functionCall Button runs the function in the renderer and sends no action', () => {
+  const runs = [];
+  let sent = 0;
+  const { surfaces } = load(structuredClone(preset('feedback').messages));
+  const s = surfaces.get('survey');
+  const view = renderSurface(s, { onAction: () => { sent += 1; }, onFunction: (r) => runs.push(r) });
+  const button = (label) => view.element.all().find((n) => n.tagName === 'BUTTON' && n.textContent === label);
+  s.dataModel.survey.stars = 5;
+  button('Preview my feedback').click();
+  assert.equal(sent, 0);
+  assert.deepEqual(runs, [{ surfaceId: 'survey', sourceComponentId: 'preview', call: 'formatString', args: { value: '${/survey/stars} stars. ${/survey/note}' }, value: '5 stars. More time for questions, please.' }]);
+  button('Send feedback').click();
+  assert.equal(sent, 1);
+});
