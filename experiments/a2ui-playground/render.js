@@ -3,6 +3,8 @@ import { evaluate, truthy, toText, setPath, absolutePath, getPath } from './eval
 import { LIMITS } from './protocol.js';
 
 let uid = 0;
+
+const isFilled = (v) => !(v === undefined || v === null || v === '' || v === false || (Array.isArray(v) && !v.length));
 const nextId = (name) => `a2ui-${++uid}-${name}`;
 
 const JUSTIFY = { start: 'flex-start', center: 'center', end: 'flex-end', spaceBetween: 'space-between', spaceAround: 'space-around', spaceEvenly: 'space-evenly', stretch: 'stretch' };
@@ -57,12 +59,12 @@ export function renderSurface(surface, { onAction = () => {} } = {}) {
     }
   }
 
-  // Field check messages appear once the visitor has touched the field.
+  // Field check messages appear once the visitor has touched the field, or at once when the agent filled it in.
   function checkList(comp, ctx, control) {
     if (!comp['@checks']) return null;
     const list = el('div', { id: nextId('checks'), class: 'a2ui-checks' });
     control.setAttribute('aria-describedby', list.id);
-    let touched = false;
+    let touched = isFilled(evaluate(comp.value, ctx));
     const show = () => {
       const msgs = touched ? failing(comp, ctx) : [];
       list.replaceChildren(...msgs.map((m) => el('span', { class: 'lab-status lab-status--error', text: m })));
@@ -84,6 +86,16 @@ export function renderSurface(surface, { onAction = () => {} } = {}) {
     return items.slice(0, LIMITS.items).map((_, i) => wrap(draw(spec.componentId, scope(`${listPath}/${i}`, i), stack)));
   }
 
+  // Both properties go on every Row and Column: custom properties inherit, so a nested one would take its parent's.
+  // Custom properties, not inline justify/align, so the phone layout can still override them.
+  function flex(cls, comp, ctx, stack) {
+    const node = el('div', { class: cls });
+    node.style.setProperty('--a2ui-justify', JUSTIFY[comp.justify] || 'flex-start');
+    node.style.setProperty('--a2ui-align', ALIGN[comp.align] || 'stretch');
+    node.append(...children(comp, ctx, stack, (c) => c).flat());
+    return node;
+  }
+
   const RENDER = {
     Text(comp, ctx, opts) {
       const first = toText(evaluate(comp.text, ctx));
@@ -93,20 +105,10 @@ export function renderSurface(surface, { onAction = () => {} } = {}) {
       return node;
     },
     Row(comp, ctx, opts, stack) {
-      const node = el('div', { class: 'a2ui-row' });
-      // Custom properties, not inline justify/align, so the phone layout can still override them.
-      if (comp.justify) node.style.setProperty('--a2ui-justify', JUSTIFY[comp.justify]);
-      if (comp.align) node.style.setProperty('--a2ui-align', ALIGN[comp.align]);
-      node.append(...children(comp, ctx, stack, (c) => c).flat());
-      return node;
+      return flex('a2ui-row', comp, ctx, stack);
     },
     Column(comp, ctx, opts, stack) {
-      const node = el('div', { class: 'a2ui-column' });
-      // Custom properties, not inline justify/align, so the phone layout can still override them.
-      if (comp.justify) node.style.setProperty('--a2ui-justify', JUSTIFY[comp.justify]);
-      if (comp.align) node.style.setProperty('--a2ui-align', ALIGN[comp.align]);
-      node.append(...children(comp, ctx, stack, (c) => c).flat());
-      return node;
+      return flex('a2ui-column', comp, ctx, stack);
     },
     List(comp, ctx, opts, stack) {
       const node = el('ul', { class: comp.direction === 'horizontal' ? 'a2ui-list a2ui-list--horizontal' : 'a2ui-list' });
