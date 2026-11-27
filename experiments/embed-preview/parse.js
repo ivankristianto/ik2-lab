@@ -26,7 +26,7 @@ export function safeUrl(value, base) {
   }
 }
 
-// The head tags the cards read. Both the paste parser and the Microlink lookup return these names.
+// The head tags the cards read. The paste parser and the bookmarklet both return these names.
 
 export const TAGS = [
   { name: 'title', selector: 'title', attr: 'text' },
@@ -95,7 +95,7 @@ function linkName(attrs) {
   return null;
 }
 
-/** Returns the head tags in page order as [name, value] pairs, the same names Microlink returns. */
+/** Returns the head tags in page order as [name, value] pairs, named as in TAGS. */
 export function parseHtml(input) {
   const html = strip(String(input || '').slice(0, MAX_INPUT));
   const tags = [];

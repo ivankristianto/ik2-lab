@@ -1,9 +1,8 @@
 // Wires the form, the paste section and the result together, and reports height to the entry page.
-import { lookupHtml, lookupUrl, messageFor, PASTE_HELPS } from './lookup.js';
+import { bookmarklet, lookupFragment, lookupHtml, lookupUrl, messageFor, PASTE_HELPS } from './lookup.js';
 import { clearResult, renderResult } from './render.js';
 
-// The result shown on first paint: my font split entry's head tags as read on 2026-11-26.
-// Shipping it saves a Microlink lookup on every page view.
+// The result shown on first paint when there is no fragment: my font split entry's head tags as read on 2026-11-26.
 const ENTRY = 'https://www.ivankristianto.com/lab/font-split-inspector/';
 const TITLE = 'Font split inspector - Ivan Kristianto';
 const DESCRIPTION = 'Paste @font-face rules and sample text, see which font file draws each character.';
@@ -48,6 +47,14 @@ function show(result) {
   $('note').textContent = NOTE;
 }
 
+function fail(box, field, error) {
+  clearResult(dom);
+  $('note').textContent = 'nothing read yet';
+  showError(box, field, error);
+  // When the lookup can't help, the bookmarklet and paste are the way forward.
+  if (PASTE_HELPS.has(error.code)) $('paste').open = true;
+}
+
 $('url-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const button = $('url-submit');
@@ -57,11 +64,7 @@ $('url-form').addEventListener('submit', async (e) => {
   try {
     show(await lookupUrl($('url').value));
   } catch (error) {
-    clearResult(dom);
-    $('note').textContent = 'nothing read yet';
-    showError($('url-error'), $('url'), error);
-    // When the lookup can't help, the paste section is the way forward.
-    if (PASTE_HELPS.has(error.code)) $('paste').open = true;
+    fail($('url-error'), $('url'), error);
   } finally {
     button.disabled = false;
   }
@@ -83,7 +86,18 @@ $('html').addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); readPaste(); }
 });
 
-show(SAMPLE);
+const link = $('bookmarklet');
+link.href = bookmarklet(location.origin + location.pathname);
+// Clicked here, it would only read this page. It is meant to be dragged to the bookmarks bar.
+link.addEventListener('click', (e) => e.preventDefault());
+
+try {
+  const result = lookupFragment(location.hash);
+  if (result) $('url').value = result.pageUrl;
+  show(result || SAMPLE);
+} catch (error) {
+  fail($('url-error'), $('url'), error);
+}
 
 // The entry's iframe sends its origin as the referrer. A checkout served from localhost talks to the ik2 dev stack.
 const SITE_ORIGINS = ['https://www.ivankristianto.com', 'http://localhost:8080'];

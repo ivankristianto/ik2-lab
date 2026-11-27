@@ -1,8 +1,8 @@
-// Looks up a page address: refuses private hosts, asks a known provider's oEmbed, else Microlink.
-// Pasted HTML is handled here too, with no network at all.
+// Turns each input into a result: an address (asked over oEmbed from the browser), pasted HTML and
+// the bookmarklet's fragment (both read with no network at all).
 import { clean, LIMITS, parseHtml, safeUrl, TAGS, URL_TAGS } from './parse.js';
 
-// Address guard: a public reader can't reach these hosts, and their names shouldn't leave the browser.
+// Address guard: a public page can't fetch from these hosts, so the tool doesn't try.
 
 const PRIVATE_V4 = [
   [0x00000000, 8], [0x0a000000, 8], [0x64400000, 10], [0x7f000000, 8], [0xa9fe0000, 16],
@@ -15,7 +15,7 @@ function ipv4(host) {
   return parts.reduce((n, p) => n * 256 + Number(p), 0);
 }
 
-/** True for hosts a public reader can't or shouldn't reach: loopback, private, link-local, local names. */
+/** True for loopback, private, link-local and local names. */
 export function isPrivateHost(hostname) {
   const host = hostname.toLowerCase().replace(/^\[|\]$/g, '').replace(/\.$/, '');
   if (!host.includes('.') && !host.includes(':')) return true;
@@ -54,23 +54,16 @@ export function readPageUrl(input) {
 export const MESSAGES = {
   'empty-url': 'Paste a page address first, such as https://example.com/post/.',
   'invalid-url': "That doesn't look like a web address. Paste the full URL, starting with https://.",
-  'private-url': "That address is on a private network, so Microlink can't open it. Paste the page's HTML below instead.",
-  'rate-limited': "You've used today's free Microlink lookups. Paste the page's HTML below instead; that has no limit.",
-  busy: 'Microlink is still busy with your last lookup. Wait a second, then press Preview again.',
-  blocked: "That site blocks automated readers like Microlink. Paste the page's HTML below instead.",
-  unreachable: "The site didn't answer Microlink in time. Try again, or paste the page's HTML below.",
-  network: "I couldn't reach Microlink. Check your connection, or paste the page's HTML below.",
-  failed: "Microlink couldn't read that page. Paste the page's HTML below instead.",
+  'private-url': "That address is on a private network. Run the bookmarklet on the page, or paste its HTML below.",
+  'no-oembed': "That site doesn't let other pages read it. Run the bookmarklet on the page, or paste its HTML below.",
+  'bad-fragment': "The bookmarklet's data was damaged or too long. Run it again, or paste the page's HTML below.",
   'empty-html': 'Paste the page source first: open the page, view its source, copy all of it and paste it here.',
 };
 
 /** Codes where the paste section opens, since pasting is the way forward. */
-export const PASTE_HELPS = new Set(['private-url', 'rate-limited', 'blocked', 'unreachable', 'network', 'failed']);
+export const PASTE_HELPS = new Set(['private-url', 'no-oembed', 'bad-fragment']);
 
-export function messageFor(error) {
-  const text = MESSAGES[error?.code] || MESSAGES.failed;
-  return error?.detail ? `${text} (${error.detail})` : text;
-}
+export const messageFor = (error) => MESSAGES[error?.code] || MESSAGES['no-oembed'];
 
 // oEmbed from providers whose endpoints answer a browser (checked from Chrome on 2026-11-26).
 
@@ -90,6 +83,9 @@ export function providerEndpoint(pageUrl) {
   const provider = PROVIDERS.find((p) => p.hosts.test(host));
   return provider ? { name: provider.name, endpoint: provider.endpoint + encodeURIComponent(pageUrl) } : null;
 }
+
+/** WordPress's own oEmbed route on the page's host. Only works where WordPress sits at the root. */
+export const wordpressEndpoint = (pageUrl) => `${new URL(pageUrl).origin}/wp-json/oembed/1.0/embed?url=${encodeURIComponent(pageUrl)}`;
 
 const KEEP = ['type', 'version', 'title', 'author_name', 'author_url', 'provider_name', 'provider_url', 'thumbnail_url', 'thumbnail_width', 'thumbnail_height', 'width', 'height', 'html'];
 
@@ -125,90 +121,25 @@ export async function fetchOembed(endpoint, fetchImpl = fetch) {
   return data;
 }
 
-// Microlink's free endpoint, asked for the exact head tags in TAGS rather than its merged summary.
-
-export const MICROLINK = 'https://api.microlink.io/';
-
-/** The request URL: meta=false skips Microlink's own extraction, data.* rules read each tag. */
-export function microlinkUrl(pageUrl) {
-  const params = new URLSearchParams({ url: pageUrl, meta: 'false' });
-  TAGS.forEach((tag, i) => {
-    params.set(`data.t${i}.selector`, tag.selector);
-    params.set(`data.t${i}.attr`, tag.attr);
-  });
-  return `${MICROLINK}?${params}`;
-}
-
-// Microlink's error codes, mapped to the tool's messages (microlink.io/docs/api/basics/error-codes).
-const CODES = {
-  ERATE: 'rate-limited',
-  ECONCURRENCY: 'busy',
-  EFORBIDDENURL: 'private-url',
-  EPROXYNEEDED: 'blocked',
-  EUNREACHABLE: 'unreachable',
-  ETIMEOUT: 'unreachable',
-  EBRWSRTIMEOUT: 'unreachable',
-  EINVALURL: 'invalid-url',
-};
-
 export class LookupError extends Error {
-  constructor(code, detail = '') {
+  constructor(code) {
     super(code);
     this.code = code;
-    this.detail = detail;
   }
 }
 
-/** Looks up pageUrl. Returns { tags, finalUrl }; throws LookupError with a code from MESSAGES. */
-export async function fetchTags(pageUrl, fetchImpl = fetch) {
-  let res;
-  try {
-    res = await fetchImpl(microlinkUrl(pageUrl), { credentials: 'omit', referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(20000) });
-  } catch {
-    throw new LookupError('network');
-  }
-  const body = await res.json().catch(() => null);
-  if (!res.ok || body?.status !== 'success') {
-    const code = typeof body?.code === 'string' ? body.code : '';
-    if (CODES[code]) throw new LookupError(CODES[code]);
-    throw new LookupError(res.status === 429 ? 'rate-limited' : 'failed', clean(code || `HTTP ${res.status}`, 40));
-  }
-  const data = body.data || {};
-  const tags = [];
-  TAGS.forEach((tag, i) => {
-    const value = data[`t${i}`];
-    if (typeof value !== 'string') return;
-    const text = clean(value, URL_TAGS.has(tag.name) ? LIMITS.url : tag.name === 'title' ? LIMITS.short : LIMITS.long);
-    if (text) tags.push([tag.name, text]);
-  });
-  return { tags, finalUrl: typeof data.url === 'string' ? data.url : pageUrl };
-}
-
-// The lookup flow.
-
-/** Returns { source, pageUrl, tags, oembed, oembedNote } or throws LookupError. */
+/** Returns { source, pageUrl, tags, pageRead, oembed, oembedNote } or throws LookupError. */
 export async function lookupUrl(input, fetchImpl = fetch) {
   const { url, error } = readPageUrl(input);
   if (error) throw new LookupError(error);
-  const provider = providerEndpoint(url);
-  if (provider) {
-    try {
-      const oembed = await fetchOembed(provider.endpoint, fetchImpl);
-      // Only the provider was asked, so the page's own tags are unknown, not missing.
-      return { source: provider.name, pageUrl: url, tags: [], pageRead: false, oembed, oembedNote: `from ${provider.name}` };
-    } catch {
-      // The provider didn't answer; Microlink can still read the page tags.
-    }
-  }
-  const { tags, finalUrl } = await fetchTags(url, fetchImpl);
-  const pageUrl = safeUrl(finalUrl) || url;
-  const declared = safeUrl(tags.find(([name]) => name === 'link oembed')?.[1], pageUrl);
-  // Microlink often leaves out oEmbed links (it did for a WordPress post that declares one), so no link isn't proof.
-  if (!declared) return { source: 'Microlink', pageUrl, tags, oembed: null, oembedNote: 'not reported' };
+  // Any other address gets one try as a WordPress post: its REST API answers browsers on other origins.
+  const { name, endpoint } = providerEndpoint(url) || { name: 'WordPress', endpoint: wordpressEndpoint(url) };
   try {
-    return { source: 'Microlink', pageUrl, tags, oembed: await fetchOembed(declared, fetchImpl), oembedNote: 'declared' };
+    const oembed = await fetchOembed(endpoint, fetchImpl);
+    // Only oEmbed was asked, so the page's own tags are unknown, not missing.
+    return { source: name, pageUrl: url, tags: [], pageRead: false, oembed, oembedNote: `from ${name}` };
   } catch {
-    return { source: 'Microlink', pageUrl, tags, oembed: null, oembedNote: 'declared, not readable here' };
+    throw new LookupError('no-oembed');
   }
 }
 
@@ -216,6 +147,47 @@ export async function lookupUrl(input, fetchImpl = fetch) {
 export function lookupHtml(html) {
   if (!String(html || '').trim()) throw new LookupError('empty-html');
   const tags = parseHtml(html);
-  const declared = tags.some(([name]) => name === 'link oembed');
-  return { source: 'pasted HTML', pageUrl: '', tags, oembed: null, oembedNote: declared ? 'declared, not fetched' : 'not declared' };
+  return { source: 'pasted HTML', pageUrl: '', tags, oembed: null, oembedNote: declaredNote(tags) };
+}
+
+const declaredNote = (tags) => (tags.some(([name]) => name === 'link oembed') ? 'declared, not fetched' : 'not declared');
+
+// The bookmarklet. collect() runs on the visitor's page, so it may only use what's in its arguments.
+// The fragment never reaches a server, and noreferrer keeps that page's address out of the request.
+
+function collect(tool, tags) {
+  const data = new URLSearchParams({ url: location.href });
+  for (const [name, selector, attr] of tags) {
+    const node = document.querySelector(selector);
+    const value = node && (attr === 'text' ? node.textContent : node.getAttribute(attr));
+    if (value && value.trim()) data.append(name, value.trim().slice(0, 2000));
+  }
+  open(`${tool}#${data}`, '_blank', 'noopener,noreferrer');
+}
+
+/** The javascript: link to drag to the bookmarks bar. tool is this page's address without a fragment. */
+export function bookmarklet(tool) {
+  const tags = TAGS.map((t) => [t.name, t.selector, t.attr]);
+  return `javascript:${encodeURIComponent(`(${collect})(${JSON.stringify(tool)},${JSON.stringify(tags)})`)}`;
+}
+
+const MAX_FRAGMENT = 50_000;
+const TAG_NAMES = new Set(TAGS.map((t) => t.name));
+
+/** Reads the bookmarklet's fragment as untrusted text. Returns null when there is none; throws on junk. */
+export function lookupFragment(hash) {
+  const text = String(hash || '').replace(/^#/, '');
+  if (!text) return null;
+  if (text.length > MAX_FRAGMENT) throw new LookupError('bad-fragment');
+  const data = new URLSearchParams(text);
+  const pageUrl = safeUrl(data.get('url'));
+  if (!pageUrl) throw new LookupError('bad-fragment');
+  const seen = new Map();
+  for (const [name, value] of data) {
+    if (!TAG_NAMES.has(name) || seen.has(name)) continue;
+    const kept = URL_TAGS.has(name) ? safeUrl(value, pageUrl) : clean(value, name === 'title' ? LIMITS.short : LIMITS.long);
+    if (kept) seen.set(name, kept);
+  }
+  const tags = [...seen];
+  return { source: 'bookmarklet', pageUrl, tags, oembed: null, oembedNote: declaredNote(tags) };
 }
