@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { load } from '../protocol.js';
 import { evaluate } from '../evaluate.js';
 import { playTo } from '../steps.js';
+import { errorMessages, dataModelMetadata } from '../outbound.js';
 import { PRESETS } from '../presets.js';
 
 const preset = (id) => PRESETS.find((p) => p.id === id);
@@ -19,8 +20,8 @@ test('every preset has an id, a label, a group and a hint, and ids are unique', 
   assert.equal(preset('broken'), undefined);
 });
 
-test('every preset except "what models get wrong" loads with no problems', () => {
-  for (const p of PRESETS.filter((x) => x.id !== 'mistakes')) {
+test('every preset except the two that fail on purpose loads with no problems', () => {
+  for (const p of PRESETS.filter((x) => !['mistakes', 'selfcorrect'].includes(x.id))) {
     const r = load(structuredClone(p.messages));
     assert.deepEqual(r.errors, [], p.id);
     assert.ok(r.surfaces.size, p.id);
@@ -101,4 +102,29 @@ test('hostile response is valid A2UI that carries markup in its strings and data
   const r = loaded('hostile');
   assert.deepEqual(r.errors, []);
   assert.match(JSON.stringify(preset('hostile').messages), /<script>/);
+});
+
+test('an agent that fixes its mistake: message 2 is refused and reported, message 3 is the fix', () => {
+  const p = preset('selfcorrect');
+  assert.equal(p.steps, true);
+  const two = playTo(p.messages, 2);
+  assert.equal(two.rejected.length, 1);
+  assert.equal(two.rejected[0].index, 1);
+  assert.equal(two.surfaces.get('rsvp').components.has('go'), false);
+  assert.deepEqual(errorMessages(p.messages, two.rejected[0].errors).map((m) => [m.error.code, m.error.surfaceId, m.error.path]), [
+    ['VALIDATION_FAILED', 'rsvp', '/components/1'],
+    ['VALIDATION_FAILED', 'rsvp', '/components/1/label'],
+  ]);
+  const three = playTo(p.messages, 3);
+  assert.ok(three.surfaces.get('rsvp').components.has('go'));
+  assert.deepEqual(three.rejected.map((r) => r.index), [1]);
+});
+
+test('feedback: sendDataModel puts the whole data model, unseen field included, in the metadata', () => {
+  const r = loaded('feedback');
+  assert.deepEqual(r.errors, []);
+  const meta = dataModelMetadata(r.surfaces.get('survey'));
+  assert.equal(meta.a2uiRendererDataModel.version, '1.0');
+  assert.equal(meta.a2uiRendererDataModel.surfaces.survey.survey.internalId, 'u-8812');
+  assert.ok(r.surfaces.get('survey').components.get('preview').action.functionCall);
 });

@@ -23,7 +23,7 @@ function el(tag, attrs = {}, ...kids) {
 }
 
 /** Render one surface. Returns its element and a refresh() that re-reads every binding. */
-export function renderSurface(surface, { onAction = () => {} } = {}) {
+export function renderSurface(surface, { onAction = () => {}, onFunction = () => {} } = {}) {
   const updaters = [];
   const refresh = () => updaters.forEach((fn) => fn());
   // A getter, because a root-level updateDataModel replaces the model object.
@@ -167,6 +167,18 @@ export function renderSurface(surface, { onAction = () => {} } = {}) {
       }
       node.addEventListener('click', () => {
         const ev = comp.action.event;
+        // A functionCall runs in the renderer and starts no agent turn; the page only shows what ran.
+        if (comp.action.functionCall) {
+          const call = comp.action.functionCall;
+          onFunction({
+            surfaceId: surface.id,
+            sourceComponentId: comp.id,
+            call: call['@call'],
+            args: evaluate(call.args || {}, ctx),
+            value: evaluate(call, ctx),
+          }, surface);
+          return;
+        }
         if (!ev) return;
         const message = {
           version: '1.0',
