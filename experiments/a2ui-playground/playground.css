@@ -1,8 +1,35 @@
-/* A2UI playground: the source switch, the key notice, and how the renderer draws basic-catalog components. Tokens only. */
+/* A2UI playground: the layout, the source switch, the key notice, and how the renderer draws basic-catalog components. Tokens only. */
 
-/* The input column stays packed at the top when the result column is taller. */
-.lab-split > .lab-stack {
+/* On a phone the result sits between the controls and the JSON, so it shows without scrolling past 16 lines of code.
+   From 45em the controls and the JSON share the left column and the result takes the right. */
+.pg-layout {
+  display: grid;
+  gap: var(--wp--preset--spacing--6);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "controls" "result" "editor";
+}
+
+.pg-controls {
+  grid-area: controls;
   align-content: start;
+}
+
+.pg-result {
+  grid-area: result;
+}
+
+.pg-editor {
+  grid-area: editor;
+  align-content: start;
+}
+
+@media (min-width: 45em) {
+
+  .pg-layout {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas: "controls result" "editor result";
+  }
 }
 
 /* .lab-stack sets display: grid, which would otherwise beat the hidden attribute. */
@@ -72,6 +99,13 @@
   white-space: pre-line;
 }
 
+/* A response can carry one very long word; it wraps instead of pushing the frame sideways. */
+.a2ui-text,
+.a2ui-caption,
+.a2ui-heading {
+  overflow-wrap: anywhere;
+}
+
 .a2ui-list--horizontal {
   grid-auto-flow: column;
   grid-auto-columns: minmax(0, 1fr);
@@ -93,15 +127,39 @@
   display: none;
 }
 
-/* The key notice sits before the key field, so it is read before anything is pasted. */
+/* The key notice is the brand's warning callout: Surface, 1px Line, an Amber icon and title, Ink text.
+   It sits right above the key field, so it is read before anything is pasted. */
 .pg-notice {
   display: grid;
-  gap: var(--wp--preset--spacing--2);
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--wp--preset--spacing--1) var(--wp--preset--spacing--3);
   padding: var(--wp--preset--spacing--4);
-  background: var(--wp--preset--color--soft-paper);
+  background: var(--wp--preset--color--surface);
   border: 1px solid var(--wp--preset--color--line);
   border-radius: var(--wp--preset--border-radius--md);
-  font-size: var(--wp--preset--font-size--x-small);
+  line-height: var(--wp--custom--line-height--normal);
+}
+
+.pg-notice p {
+  grid-column: 2;
+  margin: 0;
+}
+
+.pg-notice__icon {
+  grid-row: span 3;
+  width: var(--wp--preset--spacing--5);
+  height: var(--wp--preset--spacing--5);
+  color: var(--wp--preset--color--amber);
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pg-notice__title {
+  color: var(--wp--preset--color--amber);
+  font-weight: var(--wp--custom--font-weight--semibold);
 }
 
 .a2ui-list {
@@ -235,6 +293,16 @@
   font-family: var(--wp--preset--font-family--mono);
   font-size: var(--wp--preset--font-size--x-small);
   line-height: var(--wp--custom--line-height--normal);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.pg-details summary {
+  padding-block: var(--wp--preset--spacing--3);
+  color: var(--wp--preset--color--graphite);
+  font-family: var(--wp--preset--font-family--mono);
+  font-size: var(--wp--preset--font-size--x-small);
+  cursor: pointer;
 }
 
 .pg-problems {
@@ -245,10 +313,11 @@
   padding-left: var(--wp--preset--spacing--5);
 }
 
+/* Each problem leads with a sentence; the pointer follows, quieter, for whoever wants the exact spot. */
 .pg-problems code {
   display: block;
-  color: var(--wp--preset--color--graphite);
-  overflow-wrap: break-word;
+  color: var(--wp--preset--color--dust);
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 40em) {
@@ -262,5 +331,10 @@
   .a2ui-row > .lab-field,
   .a2ui-row > .a2ui-column {
     align-self: stretch;
+  }
+
+  /* A horizontal List stacks too, for the same reason. */
+  .a2ui-list--horizontal {
+    grid-auto-flow: row;
   }
 }

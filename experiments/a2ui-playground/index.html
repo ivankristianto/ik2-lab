@@ -16,8 +16,8 @@
   <a class="lab-standalone__back" href="https://www.ivankristianto.com/lab/a2ui-playground/" data-site-link target="_blank" rel="noopener">ivankristianto.com/lab/a2ui-playground</a>
 </header>
 
-<main class="lab-split">
-  <div class="lab-stack">
+<main class="pg-layout">
+  <div class="lab-stack pg-controls">
     <fieldset class="pg-source">
       <legend class="lab-label">where the response comes from</legend>
       <label class="pg-choice"><input type="radio" name="source" value="preset" checked> a preset, no key needed</label>
@@ -28,16 +28,11 @@
       <div class="lab-field">
         <label class="lab-label" for="preset">preset</label>
         <select class="lab-select" id="preset" aria-describedby="preset-hint"></select>
-        <span class="lab-hint" id="preset-hint">Each preset is a canned agent response that shows a different set of components. The last one is broken on purpose, to show what the validator reports.</span>
+        <span class="lab-hint" id="preset-hint"></span>
       </div>
     </div>
 
     <div class="lab-stack" id="live-panel" hidden>
-      <div class="pg-notice" role="note" aria-labelledby="notice-title">
-        <p class="lab-label" id="notice-title">about your key</p>
-        <p>Your key goes from this browser straight to <strong id="notice-host">api.anthropic.com</strong> and nowhere else. The page holds it in memory only, so a reload forgets it. It is never saved or logged.</p>
-        <p>Anthropic, OpenAI and Google all advise against using API keys in a browser. Use a key with a low spend limit, or a throwaway one you delete afterwards.</p>
-      </div>
       <div class="lab-field">
         <label class="lab-label" for="provider">provider</label>
         <select class="lab-select" id="provider" aria-describedby="provider-hint">
@@ -47,15 +42,21 @@
         </select>
         <span class="lab-hint" id="provider-hint">Each request goes from your browser to this provider's API. No server of mine is involved.</span>
       </div>
-      <div class="lab-field">
-        <label class="lab-label" for="model">model</label>
-        <input class="lab-input lab-input--code" id="model" spellcheck="false" autocomplete="off" aria-describedby="model-hint">
-        <span class="lab-hint" id="model-hint">Any model ID your key can use. The default is the provider's cheapest current model.</span>
+      <div class="pg-notice" role="note" aria-labelledby="notice-title">
+        <svg class="pg-notice__icon" aria-hidden="true" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+        <p class="pg-notice__title" id="notice-title">Before you paste a key</p>
+        <p>Use a key with a low spend limit, or a throwaway one you delete afterwards. Anthropic, OpenAI and Google all advise against putting API keys in a browser.</p>
+        <p>Your key goes from this browser straight to <strong id="notice-host">api.anthropic.com</strong> and nowhere else. The page keeps it in memory only: a reload forgets it, and it is never saved or logged.</p>
       </div>
       <div class="lab-field">
         <label class="lab-label" for="key">API key</label>
         <input class="lab-input lab-input--code" id="key" type="password" autocomplete="off" spellcheck="false" data-1p-ignore data-lpignore="true" aria-describedby="key-hint">
         <span class="lab-hint" id="key-hint"></span>
+      </div>
+      <div class="lab-field">
+        <label class="lab-label" for="model">model</label>
+        <input class="lab-input lab-input--code" id="model" spellcheck="false" autocomplete="off" aria-describedby="model-hint">
+        <span class="lab-hint" id="model-hint">Any model ID your key can use. I filled in the provider's cheapest current model.</span>
       </div>
       <div class="lab-field">
         <label class="lab-label" for="prompt">what to build</label>
@@ -67,35 +68,47 @@
         <span class="lab-status" id="live-status" role="status"></span>
       </div>
     </div>
+  </div>
 
+  <section class="lab-output pg-result" id="result" tabindex="-1" aria-labelledby="result-label">
+    <div class="lab-output__head"><span id="result-label">result</span><span class="lab-output__note" id="note" aria-live="polite"></span></div>
+    <p class="lab-hint">What a renderer draws from the messages. The fields and buttons work. A button shows the action it would send to the agent; nothing calls a real agent.</p>
+    <div class="lab-stack" id="steps" hidden>
+      <div class="lab-actions">
+        <button class="lab-button lab-button--secondary" type="button" id="step-prev">Previous</button>
+        <button class="lab-button lab-button--secondary" type="button" id="step-next">Next message</button>
+        <button class="lab-button lab-button--secondary" type="button" id="step-play">Play all</button>
+        <span class="lab-output__note" id="step-note" aria-live="polite"></span>
+      </div>
+      <p class="lab-hint" id="step-what"></p>
+    </div>
+    <div id="problems" aria-live="polite"></div>
+    <div class="lab-stack" id="surfaces"></div>
+    <div class="lab-stack" id="action-wrap" hidden>
+      <div class="lab-output__head"><span>action sent</span><span class="lab-output__note">renderer to agent</span></div>
+      <p class="lab-hint" id="action-said" role="status"></p>
+      <pre class="pg-code" id="action" tabindex="0"></pre>
+      <div class="lab-stack" id="reply-wrap" hidden>
+        <div class="lab-output__head"><span>scripted reply</span><span class="lab-output__note">agent to renderer</span></div>
+        <p class="lab-hint">No agent is behind this preset. The reply is written into it, to show how an agent answers an action with new messages. The result above already shows what it did.</p>
+        <details class="pg-details"><summary id="reply-summary">show the reply's JSON</summary><pre class="pg-code" id="reply" tabindex="0"></pre></details>
+      </div>
+    </div>
+    <p class="lab-hint" id="supported"></p>
+    <p class="lab-hint">Read the <a href="https://a2ui.org/specification/v1.0-a2ui/" target="_blank" rel="noopener">A2UI v1.0 specification</a> for what each message and component means.</p>
+  </section>
+
+  <div class="lab-stack pg-editor">
     <div class="lab-field">
       <label class="lab-label" for="messages">A2UI messages</label>
       <textarea class="lab-textarea lab-textarea--code" id="messages" rows="16" spellcheck="false" aria-describedby="messages-hint"></textarea>
-      <span class="lab-hint" id="messages-hint">A2UI v1.0 messages: a JSON array, or one message per line. Edit them and press Render, or Ctrl+Enter (⌘+Enter on a Mac). Nothing leaves your browser unless you press Generate.</span>
+      <span class="lab-hint" id="messages-hint">A JSON array, or one message per line. Edit and press Render, or Ctrl+Enter (⌘+Enter on a Mac). Nothing leaves your browser unless you press Generate.</span>
     </div>
     <div class="lab-actions">
       <button class="lab-button" type="button" id="render">Render</button>
       <button class="lab-button lab-button--secondary" type="button" id="reset">Reset preset</button>
     </div>
   </div>
-
-  <section class="lab-output" aria-labelledby="result-label">
-    <div class="lab-output__head"><span id="result-label">result</span><span class="lab-output__note" id="note" aria-live="polite"></span></div>
-    <p class="lab-hint">This is what an A2UI renderer draws from the messages. Fields and buttons work, but nothing calls a real agent: press a button to see the action message it would send.</p>
-    <div id="problems" aria-live="polite"></div>
-    <div class="lab-stack" id="surfaces"></div>
-    <div class="lab-stack" id="action-wrap" hidden>
-      <div class="lab-output__head"><span>action sent</span><span class="lab-output__note">renderer to agent</span></div>
-      <pre class="pg-code" id="action" tabindex="0"></pre>
-      <div class="lab-stack" id="reply-wrap" hidden>
-        <div class="lab-output__head"><span>scripted reply</span><span class="lab-output__note">agent to renderer</span></div>
-        <p class="lab-hint">There is no agent behind this preset. This reply is written into it, to show how an agent answers an action with new messages.</p>
-        <pre class="pg-code" id="reply" tabindex="0"></pre>
-      </div>
-    </div>
-    <p class="lab-hint" id="supported"></p>
-    <p class="lab-hint">Read the <a href="https://a2ui.org/specification/v1.0-a2ui/" target="_blank" rel="noopener">A2UI v1.0 specification</a> for what each message and component means.</p>
-  </section>
 </main>
 
 <script>

@@ -1,7 +1,8 @@
-// Page wiring: presets, Render, live mode and the action log.
-import { read, load, parseMessages, SUPPORTED, LEFT_OUT } from './protocol.js';
+// Page wiring: presets, Render, the step control, live mode and the action log.
+import { read, load, parseMessages, locate, SUPPORTED, LEFT_OUT } from './protocol.js';
 import { renderSurface } from './render.js';
 import { PRESETS, toJSON } from './presets.js';
+import { describe, playTo } from './steps.js';
 import { PROVIDERS, generate, ProviderError } from './providers.js';
 
 const $ = (id) => document.getElementById(id);
@@ -11,7 +12,11 @@ let views = [];
 
 $('supported').textContent = `Components this playground draws: ${SUPPORTED.join(', ')}. ${Object.keys(LEFT_OUT).join(', ')} are left out on purpose, and a response that uses them is reported, not drawn.`;
 
-for (const p of PRESETS) $('preset').append(new Option(p.label, p.id));
+const groups = new Map();
+for (const p of PRESETS) {
+  if (!groups.has(p.group)) groups.set(p.group, $('preset').appendChild(Object.assign(document.createElement('optgroup'), { label: p.group })));
+  groups.get(p.group).append(new Option(p.label, p.id));
+}
 const currentPreset = () => PRESETS.find((p) => p.id === $('preset').value);
 const source = () => document.querySelector('input[name="source"]:checked').value;
 
@@ -37,21 +42,25 @@ function setNote(text, status) {
   note.replaceChildren(status ? line('span', `lab-status lab-status--${status}`, text) : text);
 }
 
+// Lead with the component and a sentence; the pointer follows for whoever wants the exact spot.
 function showProblems(errors, lead) {
   const box = line('div', 'lab-error', '');
   box.setAttribute('role', 'alert');
   const head = document.createElement('p');
   head.append(line('strong', '', lead || 'I didn\'t render this response.'));
-  if (errors.length > 1 || errors[0].path) head.append(` ${errors.length === 1 ? 'One part isn\'t' : `${errors.length} parts aren't`} A2UI this playground can draw. Fix ${errors.length === 1 ? 'it' : 'them'} in the messages and press Render.`);
+  if (errors.length > 1 || errors[0].path) head.append(` It has ${errors.length === 1 ? 'one problem' : `${errors.length} problems`}. Fix ${errors.length === 1 ? 'it' : 'them'} in the messages and press Render.`);
   box.append(head);
   if (errors.length === 1 && !errors[0].path) {
     box.append(line('p', '', errors[0].message));
   } else {
+    const parsed = parseMessages(field.value).messages;
     const list = line('ul', 'pg-problems', '');
     for (const err of errors.slice(0, 20)) {
       const li = document.createElement('li');
-      if (err.path) li.append(pathCode(err.path));
+      const at = locate(parsed, err.path);
+      if (at && at.id) li.append(line('strong', '', `${at.id}${at.type ? ` (${at.type})` : ''}: `));
       li.append(err.message);
+      if (err.path) li.append(pathCode(err.path));
       list.append(li);
     }
     if (errors.length > 20) list.append(line('li', '', `And ${errors.length - 20} more.`));
@@ -71,7 +80,40 @@ function drawSurfaces() {
   setNote([[...surfaces.keys()].join(', '), `${count} ${count === 1 ? 'component' : 'components'}`, ...notes].filter(Boolean).join(' · '));
 }
 
+let step = 0;
+let timer = null;
+const stopPlaying = () => { clearInterval(timer); timer = null; };
+
+// Messages one at a time: the result after the first n, and a line on what the last one did.
+function stepTo(n) {
+  const parsed = parseMessages(field.value);
+  if (parsed.errors) {
+    stopPlaying();
+    showProblems(parsed.errors);
+    return;
+  }
+  const played = playTo(parsed.messages, n);
+  step = played.step;
+  $('action-wrap').hidden = true;
+  const rejected = played.rejected.find((r) => r.index === step - 1);
+  if (rejected) {
+    stopPlaying();
+    showProblems(rejected.errors, `I didn't apply message ${step}.`);
+  } else {
+    $('problems').replaceChildren();
+    surfaces = played.surfaces;
+    drawSurfaces();
+  }
+  $('step-note').textContent = `message ${step} of ${played.total}`;
+  $('step-what').textContent = describe(parsed.messages[step - 1]);
+  $('step-prev').disabled = step <= 1;
+  $('step-next').disabled = step >= played.total;
+  if (step >= played.total) stopPlaying();
+}
+
 function render() {
+  stopPlaying();
+  $('steps').hidden = true;
   $('action-wrap').hidden = true;
   try {
     show(read(field.value));
@@ -94,12 +136,17 @@ function show(result) {
 }
 
 function onAction(message) {
+  const clicked = document.activeElement;
   $('action').textContent = JSON.stringify(message, null, 2);
   $('action-wrap').hidden = false;
   const reply = source() === 'preset' && currentPreset().replies && currentPreset().replies[message.action.name];
   $('reply-wrap').hidden = !reply;
+  $('action-said').textContent = `${message.action.name} went to the agent.${reply ? ' The scripted reply redrew the result above.' : ''}`;
   if (!reply) return;
-  $('reply').textContent = toJSON(reply);
+  const json = toJSON(reply);
+  $('reply').textContent = json;
+  $('reply-summary').textContent = `show the reply's JSON (${json.split('\n').length} lines)`;
+  $('reply-wrap').querySelector('details').open = false;
   try {
     const { errors } = load(structuredClone(reply), surfaces);
     if (errors.length) showProblems(errors, 'The scripted reply didn\'t apply.');
@@ -107,11 +154,21 @@ function onAction(message) {
   } catch {
     showProblems([{ path: '', message: 'The scripted reply didn\'t apply. Reload and try the preset again.' }]);
   }
+  // The reply may have redrawn the button that had focus; keep the keyboard in the result, not at the top of the page.
+  if (clicked && !clicked.isConnected) $('result').focus();
 }
 
 function loadPreset() {
-  field.value = toJSON(currentPreset().messages);
-  render();
+  const preset = currentPreset();
+  field.value = toJSON(preset.messages);
+  $('preset-hint').textContent = `${preset.shows} No key needed, and nothing leaves your browser.`;
+  if (!preset.steps) {
+    render();
+    return;
+  }
+  stopPlaying();
+  $('steps').hidden = false;
+  stepTo(1);
 }
 
 function setSource() {
@@ -119,7 +176,12 @@ function setSource() {
   $('preset-panel').hidden = live;
   $('live-panel').hidden = !live;
   $('reset').hidden = live;
-  if (!live) loadPreset();
+  if (live) {
+    stopPlaying();
+    $('steps').hidden = true;
+  } else {
+    loadPreset();
+  }
 }
 
 let lastProvider = $('provider').value;
@@ -177,6 +239,13 @@ const ctrlEnter = (fn) => (e) => {
 };
 
 $('preset').addEventListener('change', loadPreset);
+$('step-prev').addEventListener('click', () => { stopPlaying(); stepTo(step - 1); });
+$('step-next').addEventListener('click', () => { stopPlaying(); stepTo(step + 1); });
+$('step-play').addEventListener('click', () => {
+  stopPlaying();
+  stepTo(1);
+  timer = setInterval(() => stepTo(step + 1), 900);
+});
 $('render').addEventListener('click', render);
 $('reset').addEventListener('click', loadPreset);
 $('generate').addEventListener('click', runLive);

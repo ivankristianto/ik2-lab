@@ -261,7 +261,7 @@ function checkComponent(comp, path, errors, ctx) {
   }
   const type = comp.component;
   if (LEFT_OUT[type]) {
-    errors.push({ path: join(path, 'component'), message: `${type}: ${LEFT_OUT[type]}` });
+    errors.push({ path: join(path, 'component'), message: LEFT_OUT[type] });
     return false;
   }
   const spec = COMPONENTS[type];
@@ -359,7 +359,8 @@ function checkTree(surface, errors) {
     }
     for (const [childId, prop] of childRefs(comp)) {
       const p = `${where.get(id)}/${prop}`;
-      if (surface.rejected.has(childId)) continue;
+      // A non-string ref is already reported as "Expected a component id"; looking it up would print [object Object].
+      if (typeof childId !== 'string' || surface.rejected.has(childId)) continue;
       if (!components.has(childId)) {
         if (!reported.has(p)) errors.push({ path: p, message: `This points at "${childId}", but no component has that id.` });
         reported.add(p);
@@ -505,3 +506,14 @@ export function read(text) {
   }
 }
 
+/** The component a problem's pointer falls inside, read from the messages: { id, type }, or null. */
+export function locate(messages, pointer) {
+  const m = /^\/(\d+)\/(\w+)\/components\/(\d+)(?:\/|$)/.exec(String(pointer || ''));
+  if (!m || !Array.isArray(messages)) return null;
+  const comp = messages[Number(m[1])]?.[m[2]]?.components?.[Number(m[3])];
+  if (!isObject(comp)) return null;
+  return {
+    id: typeof comp.id === 'string' ? comp.id : null,
+    type: typeof comp.component === 'string' ? comp.component : null,
+  };
+}

@@ -99,6 +99,8 @@ samp {
 }
 
 .lab-standalone__back {
+  display: inline-block;
+  padding-block: var(--wp--preset--spacing--3);
   font-family: var(--wp--preset--font-family--mono);
   font-size: var(--wp--preset--font-size--x-small);
 }
@@ -313,6 +315,11 @@ samp {
   font-family: var(--wp--preset--font-family--mono);
   font-size: var(--wp--preset--font-size--x-small);
   color: var(--wp--preset--color--dust);
+}
+
+/* An empty status would still draw its dot. */
+.lab-status:empty {
+  display: none;
 }
 
 .lab-status::before {
