@@ -100,9 +100,7 @@ function rowsOf(tbody, rows) {
 
 const OEMBED_NOTES = {
   'not declared': 'This page has no oEmbed link, so the cards use its meta tags.',
-  'not reported': "Microlink didn't report an oEmbed link. Paste the page's HTML to check whether it declares one.",
-  'declared, not fetched': "The page declares an oEmbed link. Pasted HTML stays in your browser, so I didn't fetch it.",
-  'declared, not readable here': "The page declares an oEmbed link, but its provider doesn't let a browser read it, so the cards use the page tags.",
+  'declared, not fetched': "The page declares an oEmbed link. I read only its tags, so I didn't fetch it.",
 };
 
 /** Empties the result area after a failed lookup, so old cards never pass for the new address. */
@@ -126,7 +124,7 @@ export function renderResult(dom, result) {
   dom.rawCount.textContent = `${result.tags.length} · ${result.source}`;
   rowsOf(dom.rawBody, result.tags.map(([name, value]) => [[name, 'ep-key'], [value]]));
   dom.rawEmpty.textContent = result.pageRead === false
-    ? `Only ${result.source}'s oEmbed was asked, so the page's own tags weren't read. Paste its HTML to see them.`
+    ? `Only ${result.source}'s oEmbed was asked, so the page's own tags weren't read. Run the bookmarklet on it to see them.`
     : 'No meta, link or title tags found.';
   dom.rawEmpty.hidden = result.tags.length > 0;
 

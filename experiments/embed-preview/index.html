@@ -25,9 +25,15 @@
         <button class="lab-button" type="submit" id="url-submit">Preview</button>
       </div>
       <div class="lab-error" id="url-error" role="alert" hidden></div>
-      <span class="lab-hint" id="url-hint">Preview sends the address to Microlink, or to the provider for YouTube, Vimeo and similar links. Pasting sends nothing anywhere. Images load straight from their sites.</span>
+      <span class="lab-hint" id="url-hint">Works for YouTube, Vimeo, X, Spotify, TikTok, Bluesky, SoundCloud and WordPress posts. The address goes only to that site. Images load straight from their sites.</span>
     </div>
   </form>
+
+  <div class="lab-field">
+    <span class="lab-label">any other page</span>
+    <div class="lab-actions"><a class="lab-button lab-button--secondary" id="bookmarklet" href="#" aria-describedby="bookmarklet-hint">Embed preview</a></div>
+    <span class="lab-hint" id="bookmarklet-hint">Drag this to your bookmarks bar, then click it on any page. It opens this tool with that page's tags in the address after #, which no server sees. If a site blocks it, paste the HTML below.</span>
+  </div>
 
   <details class="ep-more" id="paste">
     <summary>paste the page's HTML instead</summary>
