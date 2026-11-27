@@ -1,8 +1,9 @@
-// Page wiring: presets, Render, the step control, live mode and the action log.
+// Page wiring: presets, Render, the step control, live mode, and what goes back to the agent.
 import { read, load, parseMessages, locate, SUPPORTED, LEFT_OUT } from './protocol.js';
 import { renderSurface } from './render.js';
 import { PRESETS, toJSON } from './presets.js';
 import { describe, playTo } from './steps.js';
+import { errorMessages, dataModelMetadata } from './outbound.js';
 import { PROVIDERS, generate, ProviderError } from './providers.js';
 
 const $ = (id) => document.getElementById(id);
@@ -43,7 +44,8 @@ function setNote(text, status) {
 }
 
 // Lead with the component and a sentence; the pointer follows for whoever wants the exact spot.
-function showProblems(errors, lead) {
+// messages: what the pointers point into (the field by default). keep: leave the drawn surfaces up. open: unfold the error messages.
+function showProblems(errors, lead, { messages, keep = false, open = false } = {}) {
   const box = line('div', 'lab-error', '');
   box.setAttribute('role', 'alert');
   const head = document.createElement('p');
@@ -53,7 +55,7 @@ function showProblems(errors, lead) {
   if (errors.length === 1 && !errors[0].path) {
     box.append(line('p', '', errors[0].message));
   } else {
-    const parsed = parseMessages(field.value).messages;
+    const parsed = messages || parseMessages(field.value).messages;
     const list = line('ul', 'pg-problems', '');
     for (const err of errors.slice(0, 20)) {
       const li = document.createElement('li');
@@ -65,14 +67,26 @@ function showProblems(errors, lead) {
     }
     if (errors.length > 20) list.append(line('li', '', `And ${errors.length - 20} more.`));
     box.append(list);
+    const sent = errorMessages(parsed, errors);
+    if (sent.length) {
+      const details = document.createElement('details');
+      details.className = 'pg-details';
+      details.open = open;
+      details.append(
+        line('summary', '', `what the renderer sends back to the agent (${sent.length} error ${sent.length === 1 ? 'message' : 'messages'})`),
+        line('pre', 'pg-code', sent.map((m) => JSON.stringify(m)).join('\n')),
+      );
+      box.append(details);
+    }
   }
   $('problems').replaceChildren(box);
+  if (keep) return;
   $('surfaces').replaceChildren();
   setNote('not rendered', 'error');
 }
 
 function drawSurfaces() {
-  views = [...surfaces.values()].map((s) => renderSurface(s, { onAction }));
+  views = [...surfaces.values()].map((s) => renderSurface(s, { onAction, onFunction }));
   $('surfaces').replaceChildren(...views.map((v) => v.element));
   if (!views.length) $('surfaces').append(line('p', 'lab-empty', 'The messages delete every surface they create, so there is nothing left to draw.'));
   const count = [...surfaces.values()].reduce((n, s) => n + s.components.size, 0);
@@ -95,17 +109,18 @@ function stepTo(n) {
   const played = playTo(parsed.messages, n);
   step = played.step;
   $('action-wrap').hidden = true;
+  $('local-wrap').hidden = true;
   const rejected = played.rejected.find((r) => r.index === step - 1);
+  $('problems').replaceChildren();
+  surfaces = played.surfaces;
+  drawSurfaces();
+  // A rejected message leaves the surface as it was; the renderer reports it to the agent and waits for a fix.
   if (rejected) {
     stopPlaying();
-    showProblems(rejected.errors, `I didn't apply message ${step}.`);
-  } else {
-    $('problems').replaceChildren();
-    surfaces = played.surfaces;
-    drawSurfaces();
+    showProblems(rejected.errors, `I didn't apply message ${step}.`, { messages: parsed.messages, keep: true, open: true });
   }
   $('step-note').textContent = `message ${step} of ${played.total}`;
-  $('step-what').textContent = describe(parsed.messages[step - 1]);
+  $('step-what').textContent = `${rejected ? 'Not applied, so the renderer reported it: ' : ''}${describe(parsed.messages[step - 1])}`;
   $('step-prev').disabled = step <= 1;
   $('step-next').disabled = step >= played.total;
   if (step >= played.total) stopPlaying();
@@ -115,6 +130,7 @@ function render() {
   stopPlaying();
   $('steps').hidden = true;
   $('action-wrap').hidden = true;
+  $('local-wrap').hidden = true;
   try {
     show(read(field.value));
   } catch {
@@ -137,8 +153,12 @@ function show(result) {
 
 function onAction(message) {
   const clicked = document.activeElement;
+  $('local-wrap').hidden = true;
   $('action').textContent = JSON.stringify(message, null, 2);
   $('action-wrap').hidden = false;
+  const meta = dataModelMetadata(surfaces.get(message.action.surfaceId));
+  $('meta-wrap').hidden = !meta;
+  if (meta) $('meta').textContent = JSON.stringify(meta, null, 2);
   const reply = source() === 'preset' && currentPreset().replies && currentPreset().replies[message.action.name];
   $('reply-wrap').hidden = !reply;
   $('action-said').textContent = `${message.action.name} went to the agent.${reply ? ' The scripted reply redrew the result above.' : ''}`;
@@ -149,13 +169,20 @@ function onAction(message) {
   $('reply-wrap').querySelector('details').open = false;
   try {
     const { errors } = load(structuredClone(reply), surfaces);
-    if (errors.length) showProblems(errors, 'The scripted reply didn\'t apply.');
+    if (errors.length) showProblems(errors, 'The scripted reply didn\'t apply.', { messages: reply });
     else drawSurfaces();
   } catch {
     showProblems([{ path: '', message: 'The scripted reply didn\'t apply. Reload and try the preset again.' }]);
   }
   // The reply may have redrawn the button that had focus; keep the keyboard in the result, not at the top of the page.
   if (clicked && !clicked.isConnected) $('result').focus();
+}
+
+function onFunction(run) {
+  $('action-wrap').hidden = true;
+  $('local-wrap').hidden = false;
+  $('local-said').textContent = `${run.call} ran in the renderer. Nothing went to the agent.`;
+  $('local').textContent = JSON.stringify(run, null, 2);
 }
 
 function loadPreset() {

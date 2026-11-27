@@ -28,7 +28,8 @@ npm test          # from this folder; or: node --test tests/*.test.js
 - `tests/protocol.test.js`: the validator's rules, `locate()`, and input nested deep enough to overflow the stack.
 - `tests/presets.test.js`: each preset loads (or, for "what models get wrong", fails exactly as meant), each scripted reply applies, and the step presets end where they should.
 - `tests/steps.test.js`: applying messages one at a time, and the one-line description of each.
-- `tests/render.test.js`: the renderer, run against the small fake DOM in `tests/fake-dom.js`: alignment, checks on load, a disabled Button's reason, the action message, two-way binding, and hostile strings drawn as text.
+- `tests/outbound.test.js`: the `error` messages and the `sendDataModel` metadata.
+- `tests/render.test.js`: the renderer, run against the small fake DOM in `tests/fake-dom.js`: alignment, checks on load, a disabled Button's reason, the action message, a `functionCall` Button, two-way binding, and hostile strings drawn as text.
 - `tests/providers.test.js`: each provider's request and reply shape and error sentences, against a mocked `fetch`.
 
 Layout and focus are checked in a browser.
@@ -42,8 +43,9 @@ Layout and focus are checked in a browser.
 | `protocol.js` | Parses and validates agent-to-renderer messages and folds them into surface state. No DOM. |
 | `evaluate.js` | JSON Pointer access to the data model and the basic-catalog functions. No DOM. |
 | `render.js` | Draws validated surfaces with DOM APIs, with two-way binding and checks. |
-| `presets.js` | The ten presets in four groups, their scripted replies, and the hint each one shows. |
+| `presets.js` | The twelve presets in four groups, their scripted replies, and the hint each one shows. |
 | `steps.js` | Applies messages one at a time for the step control, and says in a line what each one did. No DOM. |
+| `outbound.js` | What the renderer sends back to the agent besides an action: `error` messages for validation problems, and the data model when a surface asked for it. No DOM. |
 | `providers.js` | One entry per provider: request, reply and error shapes, and the system prompt. |
 | `playground.css` | The layout, the source switch, the key notice and the rendered components. Tokens only. |
 
@@ -56,6 +58,7 @@ The A2UI v1.0 basic catalog, minus five components:
 - Functions: required, email, length, numeric, and, or, not, formatString (data paths only), formatNumber, formatCurrency, and `@index` inside templates. regex, openUrl, formatDate and pluralize are reported as unsupported.
 - Messages: createSurface, updateComponents, updateDataModel, deleteSurface. callRendererFunction and agentFunctionResponse need a live agent session, so they are reported.
 - Step control: presets marked `steps` apply their messages one at a time (`steps.js`), the way a stream arrives. A message with problems is skipped and reported, and the ones after it still apply.
+- Back to the agent: a Button sends the `action` message. A response with problems produces one `VALIDATION_FAILED` `error` message per problem, shown under the problem list. A surface created with `sendDataModel` sends its whole data model in the transport metadata (`a2uiRendererDataModel`) with every action. A Button whose action is a `functionCall` runs the catalog function in the renderer and sends nothing.
 
 Responses are untrusted. The validator checks the envelope, every component prop and enum, ids, references, cycles, depth (32), size (500 components, 200 template items, 200 KB) and data paths (`__proto__`, `constructor` and `prototype` are refused). Nothing is drawn while any problem stands, and response text reaches the page only through `textContent` and attributes. Drawing stops after 2,000 components, since nested list templates multiply.
 

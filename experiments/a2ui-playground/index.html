@@ -88,11 +88,21 @@
       <div class="lab-output__head"><span>action sent</span><span class="lab-output__note">renderer to agent</span></div>
       <p class="lab-hint" id="action-said" role="status"></p>
       <pre class="pg-code" id="action" tabindex="0"></pre>
+      <div class="lab-stack" id="meta-wrap" hidden>
+        <div class="lab-output__head"><span>data model sent</span><span class="lab-output__note">in the transport's metadata</span></div>
+        <p class="lab-hint">This surface was created with sendDataModel, so every message to the agent carries its whole data model, including fields no component shows.</p>
+        <pre class="pg-code" id="meta" tabindex="0"></pre>
+      </div>
       <div class="lab-stack" id="reply-wrap" hidden>
         <div class="lab-output__head"><span>scripted reply</span><span class="lab-output__note">agent to renderer</span></div>
         <p class="lab-hint">No agent is behind this preset. The reply is written into it, to show how an agent answers an action with new messages. The result above already shows what it did.</p>
         <details class="pg-details"><summary id="reply-summary">show the reply's JSON</summary><pre class="pg-code" id="reply" tabindex="0"></pre></details>
       </div>
+    </div>
+    <div class="lab-stack" id="local-wrap" hidden>
+      <div class="lab-output__head"><span>function run</span><span class="lab-output__note">in the renderer, not sent</span></div>
+      <p class="lab-hint" id="local-said" role="status"></p>
+      <pre class="pg-code" id="local" tabindex="0"></pre>
     </div>
     <p class="lab-hint" id="supported"></p>
     <p class="lab-hint">Read the <a href="https://a2ui.org/specification/v1.0-a2ui/" target="_blank" rel="noopener">A2UI v1.0 specification</a> for what each message and component means.</p>
