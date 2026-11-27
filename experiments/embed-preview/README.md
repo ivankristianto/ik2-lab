@@ -17,7 +17,7 @@ A site whose Content Security Policy blocks bookmarklets needs the paste path. W
 
 Preview images load straight from their sites with `referrerpolicy="no-referrer"`, so the image host sees the visitor's IP.
 
-On first paint without a fragment the tool shows a saved result (in `app.js`), so a page view sends no request.
+On first paint without a fragment the tool shows a saved result (in `app.js`), so a page view makes no lookup; only the sample's image loads.
 
 ## Untrusted output
 

@@ -51,7 +51,7 @@ function fail(box, field, error) {
   clearResult(dom);
   $('note').textContent = 'nothing read yet';
   showError(box, field, error);
-  // When the lookup can't help, the paste section is the way forward.
+  // When the lookup can't help, the bookmarklet and paste are the way forward.
   if (PASTE_HELPS.has(error.code)) $('paste').open = true;
 }
 
